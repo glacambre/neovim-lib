@@ -1,0 +1,9 @@
+[package]
+name = "neovim-lib"
+version = "0.1.0"
+authors = ["daa84 <daa84@inbox.ru>"]
+
+[dependencies]
+rmp = "0.7"
+rmp-serialize = "0.7"
+rustc-serialize = "0.3"
