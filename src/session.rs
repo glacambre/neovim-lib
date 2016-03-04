@@ -3,6 +3,8 @@ use std::io::{Error, ErrorKind};
 use std::process::Stdio;
 use std::process::{Command, Child, ChildStdin, ChildStdout};
 
+use rmp::Value;
+
 use rpc::Client;
 
 /// An active Neovim session.
@@ -35,6 +37,14 @@ impl Session {
                               .ok_or_else(|| Error::new(ErrorKind::Other, "Can't open stdin")));
 
         Ok(Session { client: ClientConnection::Child(Client::new(stdout, stdin), child) })
+    }
+
+    pub fn call(&mut self, method: &str, args: &Vec<Value>) {
+        match self.client {
+            ClientConnection::Child(ref mut client, _) => {
+                client.call(method, args)
+            }
+        }
     }
 }
 
