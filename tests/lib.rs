@@ -14,7 +14,7 @@ fn start_stop_test() {
         Session::new_child().unwrap()
     };
 
-    session.call("vim_command_output", &vec![Value::String("echo \"Hello world\"".to_owned())]);
+    session.call("vim_get_api_info", &vec![]);
 
     thread::sleep(Duration::from_secs(2));
 }

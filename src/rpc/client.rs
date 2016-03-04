@@ -33,15 +33,12 @@ impl <R: Read + Send + 'static, W: Write> Client <R, W> {
 
         self.msgid_counter += 1;
 
-        // TODO: remove expect
         model::encode(&mut self.writer, &req).expect("Error send message");
-        println!("Send message");
     }
 
     fn dispatch_thread(mut reader: R) -> JoinHandle<()> {
         thread::spawn(move || {
             loop {
-                println!("Enter wait thread");
                 let msg = model::decode(&mut reader).expect("Filed to decode message");
                 println!("Get message {:?}", msg);
             }
