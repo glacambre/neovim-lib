@@ -12,5 +12,6 @@ fn start_stop_test() {
         Session::new_child().unwrap()
     };
 
-    let value = Neovim::new(session).vim_get_api_info().unwrap();
+    let mut nvim = Neovim::new(session);
+    println!("{:?}", nvim.vim_get_api_info().unwrap());
 }
