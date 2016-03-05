@@ -1,28 +1,30 @@
 // Auto generated {{date}}
 
-use std::collections::HashMap;
+use session::Session;
+use rmp::Value;
+use rmp::value::Integer;
 
 pub struct Neovim {
     session: Session,
-    ext_types: HashMap<u64, Fn>,
+    {% for typename in exttypes %}
+    {{typename|lower}}_unpack_id: u64,
+    {% endfor %}
 }
 
 impl Neovim {
     pub fn new(session: Session) -> Neovim {
-        let ext_types = HashMap::new();
-        {% for typename in exttypes %}
-        ext_types.insert({{exttypes[typename]}}, unpack{{typename}});
-        {% endfor %}
         Neovim {
             session: session,
-            ext_types: ext_types,
+            {% for typename in exttypes %}
+            {{typename|lower}}_unpack_id: {{exttypes[typename]}},
+            {% endfor %}
         }
     }
 
     {% for f in functions %}
-    pub fn {{f.name}}(&mut self, {{f.argstring}}) {
+    pub fn {{f.name}}(&mut self, {{f.argstring}}) -> Result<Value, Value> {
         self.session.call("{{f.name}}",
-                          {{ f.parameters|map(attribute = "name")|join(", ") }});
+                          &vec![{{ f.parameters|map(attribute = "arg_converter")|join(", ") }}])
     }
 
     {% endfor %}

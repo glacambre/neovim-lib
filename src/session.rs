@@ -1,3 +1,4 @@
+use std::result;
 use std::io::Result;
 use std::io::{Error, ErrorKind};
 use std::process::Stdio;
@@ -39,7 +40,8 @@ impl Session {
         Ok(Session { client: ClientConnection::Child(Client::new(stdout, stdin), child) })
     }
 
-    pub fn call(&mut self, method: &str, args: &Vec<Value>) {
+    /// Sync call
+    pub fn call(&mut self, method: &str, args: &Vec<Value>) -> result::Result<Value, Value> {
         match self.client {
             ClientConnection::Child(ref mut client, _) => {
                 client.call(method, args)

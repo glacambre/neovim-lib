@@ -66,11 +66,23 @@ class NeovimTypeVal:
     # Unbound Array types
     UNBOUND_ARRAY = re.compile('ArrayOf\(\s*(\w+)\s*\)')
 
+    # convert forward map
+    CONVERT_FORWARD = {
+            'u64': 'Value::Integer(Integer::U64({}))',
+            'String': 'Value::String({})',
+            'bool': 'Value::Boolean({})',
+            '(u64, u64)': 'Value::Array(vec![Value::Integer(Integer::U64({0}.0)), Value::Integer(Integer::U64({0}.1))])',
+        }
+
     def __init__(self, typename, name=''):
         self.name = name
         self.neovim_type = typename
         self.ext = False
         self.native_type = NeovimTypeVal.nativeType(typename)
+        if self.native_type in self.CONVERT_FORWARD:
+            self.arg_converter = self.CONVERT_FORWARD[self.native_type].format(self.name)
+        else:
+            self.arg_converter = self.name
 
         if typename in self.EXTTYPES:
             self.ext = True
@@ -78,6 +90,8 @@ class NeovimTypeVal:
     def __getitem__(self, key):
         if key == "name":
             return self.name
+        if key == "arg_converter":
+            return self.arg_converter
         return None
 
     @classmethod

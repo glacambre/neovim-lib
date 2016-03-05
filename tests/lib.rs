@@ -2,9 +2,7 @@ extern crate neovim_lib;
 extern crate rmp;
 
 use neovim_lib::session::Session;
-use rmp::Value;
-use std::thread;
-use std::time::Duration;
+use neovim_lib::neovim_api::Neovim;
 
 #[test]
 fn start_stop_test() {
@@ -15,6 +13,4 @@ fn start_stop_test() {
     };
 
     session.call("vim_get_api_info", &vec![]);
-
-    thread::sleep(Duration::from_secs(2));
 }
