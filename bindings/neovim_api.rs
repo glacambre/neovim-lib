@@ -11,6 +11,10 @@ pub struct Neovim {
     {% endfor %}
 }
 
+fn convert_array_of_string(vec: &Vec<String>) -> Value {
+    Value::Array(vec.iter().map(|s| Value::String(s.to_owned())).collect())
+}
+
 impl Neovim {
     pub fn new(session: Session) -> Neovim {
         Neovim {

@@ -12,5 +12,5 @@ fn start_stop_test() {
         Session::new_child().unwrap()
     };
 
-    session.call("vim_get_api_info", &vec![]);
+    let value = Neovim::new(session).vim_get_api_info().unwrap();
 }

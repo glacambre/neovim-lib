@@ -72,6 +72,7 @@ class NeovimTypeVal:
             'String': 'Value::String({})',
             'bool': 'Value::Boolean({})',
             '(u64, u64)': 'Value::Array(vec![Value::Integer(Integer::U64({0}.0)), Value::Integer(Integer::U64({0}.1))])',
+            'Vec<Value>': 'Value::Array({})',
         }
 
     def __init__(self, typename, name=''):
@@ -79,7 +80,11 @@ class NeovimTypeVal:
         self.neovim_type = typename
         self.ext = False
         self.native_type = NeovimTypeVal.nativeType(typename)
-        if self.native_type in self.CONVERT_FORWARD:
+
+        if self.UNBOUND_ARRAY.match(typename):
+            m = self.UNBOUND_ARRAY.match(typename)
+            self.arg_converter = "convert_array_of_%s(&%s)" % (m.groups()[0].lower(), name)
+        elif self.native_type in self.CONVERT_FORWARD:
             self.arg_converter = self.CONVERT_FORWARD[self.native_type].format(self.name)
         else:
             self.arg_converter = self.name
@@ -205,7 +210,7 @@ if __name__ == '__main__':
             if name.endswith('.rs'):
                 env = {}
                 env['date'] = datetime.datetime.now()
-                functions = [Function(f) for f in api['functions'] if f['name'] != 'vim_get_api_info']
+                functions = [Function(f) for f in api['functions']]
                 env['functions'] = [f for f in functions if f.valid]
                 exttypes = { typename:info['id'] for typename,info in api['types'].items()}
                 env['exttypes'] = exttypes

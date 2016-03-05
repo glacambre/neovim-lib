@@ -1,4 +1,4 @@
-// Auto generated 2016-03-05 12:41:59.477292
+// Auto generated 2016-03-05 13:57:05.584534
 
 use session::Session;
 use rmp::Value;
@@ -9,6 +9,10 @@ pub struct Neovim {
     buffer_unpack_id: u64,
     window_unpack_id: u64,
     tabpage_unpack_id: u64,
+}
+
+fn convert_array_of_string(vec: &Vec<String>) -> Value {
+    Value::Array(vec.iter().map(|s| Value::String(s.to_owned())).collect())
 }
 
 impl Neovim {
@@ -189,7 +193,7 @@ impl Neovim {
                                 Value::Integer(Integer::U64(end)),
                                 Value::Boolean(include_start),
                                 Value::Boolean(include_end),
-                                replacement])
+                                convert_array_of_string(&replacement)])
     }
 
     pub fn buffer_get_var(&mut self, buffer: u64, name: String) -> Result<Value, Value> {
@@ -248,7 +252,7 @@ impl Neovim {
         self.session.call("buffer_insert",
                           &vec![Value::Integer(Integer::U64(buffer)),
                                 Value::Integer(Integer::U64(lnum)),
-                                lines])
+                                convert_array_of_string(&lines)])
     }
 
     pub fn buffer_get_mark(&mut self, buffer: u64, name: String) -> Result<Value, Value> {
@@ -297,7 +301,8 @@ impl Neovim {
     }
 
     pub fn vim_call_function(&mut self, fname: String, args: Vec<Value>) -> Result<Value, Value> {
-        self.session.call("vim_call_function", &vec![Value::String(fname), args])
+        self.session.call("vim_call_function",
+                          &vec![Value::String(fname), Value::Array(args)])
     }
 
     pub fn vim_strwidth(&mut self, str: String) -> Result<Value, Value> {
@@ -405,5 +410,9 @@ impl Neovim {
 
     pub fn vim_name_to_color(&mut self, name: String) -> Result<Value, Value> {
         self.session.call("vim_name_to_color", &vec![Value::String(name)])
+    }
+
+    pub fn vim_get_api_info(&mut self) -> Result<Value, Value> {
+        self.session.call("vim_get_api_info", &vec![])
     }
 }
