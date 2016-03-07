@@ -1,4 +1,5 @@
 use std::result;
+use std::net::TcpStream;
 use std::io::Result;
 use std::io::{Error, ErrorKind};
 use std::process::Stdio;
@@ -9,11 +10,17 @@ use rmp::Value;
 use rpc::Client;
 
 /// An active Neovim session.
-pub struct Session{
-    client: ClientConnection
+pub struct Session {
+    client: ClientConnection,
 }
 
 impl Session {
+    pub fn new_tcp(addr: &str) -> Result<Session> {
+        let stream = try!(TcpStream::connect("127.0.0.1:34254"));
+        let read = try!(stream.try_clone());
+        Ok(Session { client: ClientConnection::Tcp(Client::new(stream, read)) })
+    }
+
     /// Connect to a Neovim instance by spawning a new one.
     pub fn new_child() -> Result<Session> {
         if cfg!(target_os = "linux") {
@@ -43,13 +50,13 @@ impl Session {
     /// Sync call
     pub fn call(&mut self, method: &str, args: &Vec<Value>) -> result::Result<Value, Value> {
         match self.client {
-            ClientConnection::Child(ref mut client, _) => {
-                client.call(method, args)
-            }
+            ClientConnection::Child(ref mut client, _) => client.call(method, args),
+            ClientConnection::Tcp(ref mut client) => client.call(method, args),
         }
     }
 }
 
-enum ClientConnection{
+enum ClientConnection {
     Child(Client<ChildStdout, ChildStdin>, Child),
+    Tcp(Client<TcpStream, TcpStream>),
 }
