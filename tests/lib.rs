@@ -15,3 +15,11 @@ fn start_stop_test() {
     let mut nvim = Neovim::new(session);
     println!("{:?}", nvim.vim_get_api_info().unwrap());
 }
+
+#[ignore]
+#[test]
+fn remote_test() {
+    let mut session = Session::new_tcp("127.0.0.1:6666").unwrap();
+    let mut nvim = Neovim::new(session);
+    //nvim.vim_command("echo \"Test\"".to_owned()).unwrap();
+}

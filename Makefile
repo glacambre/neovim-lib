@@ -1,8 +1,8 @@
 test:
-	cargo test
+	RUST_BACKTRACE=1 cargo test
 
 test-out:
-	cargo test -- --nocapture
+	RUST_BACKTRACE=1 cargo test -- --nocapture
 
 generate:
 	python bindings/generate_bindings.py nvim src

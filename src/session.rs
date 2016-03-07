@@ -16,7 +16,7 @@ pub struct Session {
 
 impl Session {
     pub fn new_tcp(addr: &str) -> Result<Session> {
-        let stream = try!(TcpStream::connect("127.0.0.1:34254"));
+        let stream = try!(TcpStream::connect(addr));
         let read = try!(stream.try_clone());
         Ok(Session { client: ClientConnection::Tcp(Client::new(stream, read)) })
     }
