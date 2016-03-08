@@ -48,7 +48,17 @@ class NeovimTypeVal:
     Representation for Neovim Parameter/Return
     """
     # msgpack simple types types
-    SIMPLETYPES = {
+    SIMPLETYPES_REF = {
+            'Array': 'Vec<Value>',
+            'ArrayOf(Integer, 2)': '(u64, u64)',
+            'void': '',
+            'Integer': 'u64',
+            'Boolean': 'bool',
+            'String': '&str',
+            'Object': 'Value',
+        }
+
+    SIMPLETYPES_VAL = {
             'Array': 'Vec<Value>',
             'ArrayOf(Integer, 2)': '(u64, u64)',
             'void': '',
@@ -69,7 +79,7 @@ class NeovimTypeVal:
     # convert forward map
     CONVERT_FORWARD = {
             'u64': 'Value::Integer(Integer::U64({}))',
-            'String': 'Value::String({})',
+            '&str': 'Value::String({}.to_owned())',
             'bool': 'Value::Boolean({})',
             '(u64, u64)': 'Value::Array(vec![Value::Integer(Integer::U64({0}.0)), Value::Integer(Integer::U64({0}.1))])',
             'Vec<Value>': 'Value::Array({})',
@@ -79,13 +89,13 @@ class NeovimTypeVal:
         self.name = name
         self.neovim_type = typename
         self.ext = False
-        self.native_type = NeovimTypeVal.nativeType(typename)
+        self.native_type_arg = NeovimTypeVal.nativeTypeRef(typename)
 
         if self.UNBOUND_ARRAY.match(typename):
             m = self.UNBOUND_ARRAY.match(typename)
             self.arg_converter = "convert_array_of_%s(&%s)" % (m.groups()[0].lower(), name)
-        elif self.native_type in self.CONVERT_FORWARD:
-            self.arg_converter = self.CONVERT_FORWARD[self.native_type].format(self.name)
+        elif self.native_type_arg in self.CONVERT_FORWARD:
+            self.arg_converter = self.CONVERT_FORWARD[self.native_type_arg].format(self.name)
         else:
             self.arg_converter = self.name
 
@@ -100,15 +110,28 @@ class NeovimTypeVal:
         return None
 
     @classmethod
-    def nativeType(cls, typename):
+    def nativeTypeVal(cls, typename):
         """Return the native type for this Neovim type."""
-        if typename in cls.SIMPLETYPES:
-            return cls.SIMPLETYPES[typename]
+        if typename in cls.SIMPLETYPES_VAL:
+            return cls.SIMPLETYPES_VAL[typename]
         elif typename in cls.EXTTYPES:
             return cls.EXTTYPES[typename]
         elif cls.UNBOUND_ARRAY.match(typename):
             m = cls.UNBOUND_ARRAY.match(typename)
-            return 'Vec<%s>' % cls.nativeType(m.groups()[0])
+            return 'Vec<%s>' % cls.nativeTypeVal(m.groups()[0])
+        raise UnsupportedType(typename)
+
+
+    @classmethod
+    def nativeTypeRef(cls, typename):
+        """Return the native type for this Neovim type."""
+        if typename in cls.SIMPLETYPES_REF:
+            return cls.SIMPLETYPES_REF[typename]
+        elif typename in cls.EXTTYPES:
+            return cls.EXTTYPES[typename]
+        elif cls.UNBOUND_ARRAY.match(typename):
+            m = cls.UNBOUND_ARRAY.match(typename)
+            return 'Vec<%s>' % cls.nativeTypeVal(m.groups()[0])
         raise UnsupportedType(typename)
 
 class Function:
@@ -131,18 +154,18 @@ class Function:
         self.can_fail = self.fun.get('can_fail', False)
 
         # Build the argument string - makes it easier for the templates
-        self.argstring = ', '.join(['%s: %s' % (tv.name, tv.native_type) for tv in self.parameters])
+        self.argstring = ', '.join(['%s: %s' % (tv.name, tv.native_type_arg) for tv in self.parameters])
         self.valid = True
 
     def real_signature(self):
         params = ''
         for p in self.parameters:
-            params += '%s %s' % (p.native_type, p.name)
+            params += '%s %s' % (p.native_type_arg, p.name)
             params += ', '
         notes = ''
         if self.can_fail:
             notes += '!fails'
-        return '%s %s(%s) %s' % (self.return_type.native_type,self.name,params, notes)
+        return '%s %s(%s) %s' % (self.return_type.native_type_arg,self.name,params, notes)
     def signature(self):
         params = ''
         for p in self.parameters:
