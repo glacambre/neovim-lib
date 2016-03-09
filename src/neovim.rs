@@ -1,11 +1,11 @@
 use session::Session;
 
 pub struct Neovim {
-    session: Session,
+    pub session: Session,
 }
 
 impl Neovim {
     pub fn new(session: Session) -> Neovim {
-        Neovim { session: session };
+        Neovim { session: session }
     }
 }
