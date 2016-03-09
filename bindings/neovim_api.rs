@@ -4,34 +4,30 @@ use session::Session;
 use rmp::Value;
 use rmp::value::Integer;
 
-pub struct Neovim {
-    session: Session,
+pub enum ExtType {
     {% for typename in exttypes %}
-    {{typename|lower}}_unpack_id: u64,
+    {{typename}}({{exttypes[typename]}}),
     {% endfor %}
 }
 
-fn convert_array_of_string(vec: &Vec<String>) -> Value {
+pub fn convert_array_of_string(vec: &Vec<String>) -> Value {
     Value::Array(vec.iter().map(|s| Value::String(s.to_owned())).collect())
 }
 
-fn map_generic_error(err: Value) -> String {
+pub fn map_generic_error(err: Value) -> String {
     match err {
         Value::String(val) => val.to_owned(),
         val => format!("Unknow error type: {:?}", val),
     }
 }
 
-impl Neovim {
-    pub fn new(session: Session) -> Neovim {
-        Neovim {
-            session: session,
-            {% for typename in exttypes %}
-            {{typename|lower}}_unpack_id: {{exttypes[typename]}},
-            {% endfor %}
-        }
-    }
+pub trait NeovimApi {
+    {% for f in functions %}
+    fn {{f.name}}(&mut self, {{f.argstring}}) -> Result<Value, String>;
+    {% endfor %}
+}
 
+impl NeovimApi for Neovim {
     {% for f in functions %}
     pub fn {{f.name}}(&mut self, {{f.argstring}}) -> Result<Value, String> {
         self.session.call("{{f.name}}",
