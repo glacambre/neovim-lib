@@ -23,15 +23,16 @@ impl ExtType {
 
 pub trait NeovimApi {
     {% for f in functions %}
-    fn {{f.name}}(&mut self, {{f.argstring}}) -> Result<Value, String>;
+    fn {{f.name}}(&mut self, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, String>;
     {% endfor %}
 }
 
 impl NeovimApi for Neovim {
     {% for f in functions %}
-    fn {{f.name}}(&mut self, {{f.argstring}}) -> Result<Value, String> {
+    fn {{f.name}}(&mut self, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, String> {
         self.session.call("{{f.name}}",
                           &call_args![{{ f.parameters|map(attribute = "name")|join(", ") }}])
+                    .map(map_result)
                     .map_err(map_generic_error)
     }
 

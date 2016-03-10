@@ -108,11 +108,115 @@ pub fn encode<W: Write>(writer: &mut W, msg: &RpcMessage) -> Result<(), Box<Erro
     Ok(())
 }
 
+pub trait FromVal<T> {
+    fn from_val(T) -> Self;
+}
+
+impl FromVal<Value> for () {
+    fn from_val(val: Value) -> Self {
+        ()
+    }
+}
+
+impl FromVal<Value> for Value {
+    fn from_val(val: Value) -> Self {
+        val
+    }
+}
+
+impl FromVal<Value> for Vec<String> {
+    fn from_val(val: Value) -> Self {
+        if let Value::Array(arr) = val{
+            arr.iter().map(|v| {
+                if let &Value::String(ref v) = v {
+                    return v.to_owned();
+                }
+                panic!("Can't convert to string");
+            });
+        }
+        panic!("Can't convert to string");
+    }
+}
+
+impl FromVal<Value> for Vec<Value> {
+    fn from_val(val: Value) -> Self {
+        if let Value::Array(arr) = val {
+            return arr;
+        }
+        panic!("Can't convert to string");
+    }
+}
+
+impl FromVal<Value> for Vec<u64> {
+    fn from_val(val: Value) -> Self {
+        if let Value::Array(arr) = val {
+            return arr.iter().map(|v| {
+                if let &Value::Integer(Integer::U64(ref res)) = v {
+                    return *res;
+                }
+                panic!("Can't convert to u64");
+            }).collect();
+        }
+        panic!("Can't convert to string");
+    }
+}
+
+impl FromVal<Value> for (u64, u64) {
+    fn from_val(val: Value) -> Self {
+        if let Value::Array(res) = val {
+            if res.len() != 2 {
+                panic!("Array length must be 2");
+            }
+            let p1 = if let &Value::Integer(Integer::U64(ref p1)) = res[0] {
+                *p1
+            } else {
+                panic!("Can't get u64 value at position 0");
+            };
+
+            let p2 = if let &Value::Integer(Integer::U64(ref p2)) = res[1] {
+                *p2
+            } else {
+                panic!("Can't get u64 value at position 1");
+            };
+
+            return (p1, p2);
+        }
+        panic!("Can't convert to string");
+    }
+}
+
+impl FromVal<Value> for bool {
+    fn from_val(val: Value) -> Self {
+        if let Value::Boolean(res) = val {
+            return res;
+        }
+        panic!("Can't convert to string");
+    }
+}
+
+impl FromVal<Value> for String {
+    fn from_val(val: Value) -> Self {
+        if let Value::String(res) = val {
+            return res;
+        }
+        panic!("Can't convert to string");
+    }
+}
+
+impl FromVal<Value> for u64 {
+    fn from_val(val: Value) -> Self {
+        if let Value::Integer(Integer::U64(res)) = val {
+            return res;
+        }
+        panic!("Can't convert to string");
+    }
+}
+
 pub trait IntoVal<T> {
     fn into_val(self) -> T;
 }
 
-impl <'a> IntoVal<Value> for &'a str {
+impl<'a> IntoVal<Value> for &'a str {
     fn into_val(self) -> Value {
         Value::String(self.to_string())
     }

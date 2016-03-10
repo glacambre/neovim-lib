@@ -51,7 +51,7 @@ class NeovimTypeVal:
     SIMPLETYPES_REF = {
             'Array': 'Vec<Value>',
             'ArrayOf(Integer, 2)': '(u64, u64)',
-            'void': '',
+            'void': '()',
             'Integer': 'u64',
             'Boolean': 'bool',
             'String': '&str',
@@ -61,7 +61,7 @@ class NeovimTypeVal:
     SIMPLETYPES_VAL = {
             'Array': 'Vec<Value>',
             'ArrayOf(Integer, 2)': '(u64, u64)',
-            'void': '',
+            'void': '()',
             'Integer': 'u64',
             'Boolean': 'bool',
             'String': 'String',
@@ -76,37 +76,21 @@ class NeovimTypeVal:
     # Unbound Array types
     UNBOUND_ARRAY = re.compile('ArrayOf\(\s*(\w+)\s*\)')
 
-    # convert forward map
-    CONVERT_FORWARD = {
-            'u64': 'Value::Integer(Integer::U64({}))',
-            '&str': 'Value::String({}.to_owned())',
-            'bool': 'Value::Boolean({})',
-            '(u64, u64)': 'Value::Array(vec![Value::Integer(Integer::U64({0}.0)), Value::Integer(Integer::U64({0}.1))])',
-            'Vec<Value>': 'Value::Array({})',
-        }
-
     def __init__(self, typename, name=''):
         self.name = name
         self.neovim_type = typename
         self.ext = False
         self.native_type_arg = NeovimTypeVal.nativeTypeRef(typename)
-
-        # if self.UNBOUND_ARRAY.match(typename):
-        #     m = self.UNBOUND_ARRAY.match(typename)
-        #     self.arg_converter = "convert_array_of_%s(&%s)" % (m.groups()[0].lower(), name)
-        # elif self.native_type_arg in self.CONVERT_FORWARD:
-        #     self.arg_converter = self.CONVERT_FORWARD[self.native_type_arg].format(self.name)
-        # else:
-        #     self.arg_converter = self.name
+        self.native_type_ret = NeovimTypeVal.nativeTypeVal(typename)
 
         if typename in self.EXTTYPES:
             self.ext = True
 
     def __getitem__(self, key):
+        if key == "native_type_arg":
+            return self.native_type_arg
         if key == "name":
             return self.name
-        if key == "arg_converter":
-            return self.arg_converter
         return None
 
     @classmethod

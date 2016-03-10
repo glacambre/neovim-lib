@@ -13,6 +13,10 @@ pub fn map_generic_error(err: Value) -> String {
     }
 }
 
+pub fn map_result<T: FromVal<Value>>(val: Value) -> T {
+    T::from_val(val)
+}
+
 impl Neovim {
     pub fn new(session: Session) -> Neovim {
         Neovim { session: session }
