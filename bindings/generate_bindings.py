@@ -91,13 +91,13 @@ class NeovimTypeVal:
         self.ext = False
         self.native_type_arg = NeovimTypeVal.nativeTypeRef(typename)
 
-        if self.UNBOUND_ARRAY.match(typename):
-            m = self.UNBOUND_ARRAY.match(typename)
-            self.arg_converter = "convert_array_of_%s(&%s)" % (m.groups()[0].lower(), name)
-        elif self.native_type_arg in self.CONVERT_FORWARD:
-            self.arg_converter = self.CONVERT_FORWARD[self.native_type_arg].format(self.name)
-        else:
-            self.arg_converter = self.name
+        # if self.UNBOUND_ARRAY.match(typename):
+        #     m = self.UNBOUND_ARRAY.match(typename)
+        #     self.arg_converter = "convert_array_of_%s(&%s)" % (m.groups()[0].lower(), name)
+        # elif self.native_type_arg in self.CONVERT_FORWARD:
+        #     self.arg_converter = self.CONVERT_FORWARD[self.native_type_arg].format(self.name)
+        # else:
+        #     self.arg_converter = self.name
 
         if typename in self.EXTTYPES:
             self.ext = True

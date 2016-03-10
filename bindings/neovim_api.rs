@@ -2,7 +2,7 @@
 
 use neovim::*;
 use rmp::Value;
-use rmp::value::Integer;
+use rpc::*;
 
 pub enum ExtType {
     {% for typename in exttypes %}
@@ -31,7 +31,7 @@ impl NeovimApi for Neovim {
     {% for f in functions %}
     fn {{f.name}}(&mut self, {{f.argstring}}) -> Result<Value, String> {
         self.session.call("{{f.name}}",
-                          &vec![{{ f.parameters|map(attribute = "arg_converter")|join(", ") }}])
+                          &call_args![{{ f.parameters|map(attribute = "name")|join(", ") }}])
                     .map_err(map_generic_error)
     }
 

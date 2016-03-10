@@ -16,13 +16,14 @@ pub struct Session {
 
 #[macro_export]
 macro_rules! call_args {
+    () => (Vec::new());
     ($($e:expr), *) => {{
         let mut vec = Vec::new();
         $(
             vec.push($e.into_val());
         )*
         vec
-    }}
+    }};
 }
 
 impl Session {

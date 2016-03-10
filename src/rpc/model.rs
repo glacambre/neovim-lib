@@ -112,6 +112,30 @@ pub trait IntoVal<T> {
     fn into_val(self) -> T;
 }
 
+impl <'a> IntoVal<Value> for &'a str {
+    fn into_val(self) -> Value {
+        Value::String(self.to_string())
+    }
+}
+
+impl IntoVal<Value> for Vec<String> {
+    fn into_val(self) -> Value {
+        Value::Array(self.iter().map(|v| Value::String(v.to_string())).collect())
+    }
+}
+
+impl IntoVal<Value> for Vec<Value> {
+    fn into_val(self) -> Value {
+        Value::Array(self)
+    }
+}
+
+impl IntoVal<Value> for (u64, u64) {
+    fn into_val(self) -> Value {
+        Value::Array(vec![self.0.into_val(), self.1.into_val()])
+    }
+}
+
 impl IntoVal<Value> for bool {
     fn into_val(self) -> Value {
         Value::Boolean(self)
@@ -127,12 +151,6 @@ impl IntoVal<Value> for u64 {
 impl IntoVal<Value> for String {
     fn into_val(self) -> Value {
         Value::String(self)
-    }
-}
-
-impl IntoVal<Value> for Vec<Value> {
-    fn into_val(self) -> Value {
-        Value::Array(self)
     }
 }
 
