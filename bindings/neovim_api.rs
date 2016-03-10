@@ -1,6 +1,6 @@
 // Auto generated {{date}}
 
-use neovim::Neovim;
+use neovim::*;
 use rmp::Value;
 use rmp::value::Integer;
 
@@ -18,17 +18,6 @@ impl ExtType {
         {% endfor %}
         _ => Err("Not supported type".to_owned()),
         }
-    }
-}
-
-pub fn convert_array_of_string(vec: &Vec<String>) -> Value {
-    Value::Array(vec.iter().map(|s| Value::String(s.to_owned())).collect())
-}
-
-pub fn map_generic_error(err: Value) -> String {
-    match err {
-        Value::String(val) => val.to_owned(),
-        val => format!("Unknow error type: {:?}", val),
     }
 }
 

@@ -1,6 +1,6 @@
-// Auto generated 2016-03-09 14:31:41.129355
+// Auto generated 2016-03-09 23:38:32.159329
 
-use neovim::Neovim;
+use neovim::*;
 use rmp::Value;
 use rmp::value::Integer;
 
@@ -18,17 +18,6 @@ impl ExtType {
             2 => Ok(ExtType::Tabpage),
             _ => Err("Not supported type".to_owned()),
         }
-    }
-}
-
-pub fn convert_array_of_string(vec: &Vec<String>) -> Value {
-    Value::Array(vec.iter().map(|s| Value::String(s.to_owned())).collect())
-}
-
-pub fn map_generic_error(err: Value) -> String {
-    match err {
-        Value::String(val) => val.to_owned(),
-        val => format!("Unknow error type: {:?}", val),
     }
 }
 

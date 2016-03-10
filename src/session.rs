@@ -14,6 +14,17 @@ pub struct Session {
     client: ClientConnection,
 }
 
+#[macro_export]
+macro_rules! call_args {
+    ($($e:expr), *) => {{
+        let mut vec = Vec::new();
+        $(
+            vec.push($e.into_val());
+        )*
+        vec
+    }}
+}
+
 impl Session {
     pub fn new_tcp(addr: &str) -> Result<Session> {
         let stream = try!(TcpStream::connect(addr));

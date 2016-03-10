@@ -46,7 +46,6 @@ macro_rules! try_arr {
     })
 }
 
-#[macro_export]
 macro_rules! rpc_args {
     ($($e:expr), *) => {{
         let mut vec = Vec::new();
