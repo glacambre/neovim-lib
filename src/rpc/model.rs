@@ -46,6 +46,17 @@ macro_rules! try_arr {
     })
 }
 
+#[macro_export]
+macro_rules! rpc_args {
+    ($($e:expr), *) => {{
+        let mut vec = Vec::new();
+        $(
+            vec.push($e.into_val());
+        )*
+        vec.into_val()
+    }}
+}
+
 pub fn decode<R: Read>(reader: &mut R) -> Result<RpcMessage, Box<Error>> {
     let arr = try_arr!(try!(read_value(reader)), "Rpc message must be array");
     match try_int!(arr[0], "Can't find message type") {
@@ -83,27 +94,53 @@ pub fn decode<R: Read>(reader: &mut R) -> Result<RpcMessage, Box<Error>> {
 pub fn encode<W: Write>(writer: &mut W, msg: &RpcMessage) -> Result<(), Box<Error>> {
     match msg {
         &RpcMessage::RpcRequest{msgid, ref method, ref params} => {
-            let val = Value::Array(vec![Value::Integer(Integer::U64(0)),
-                                        Value::Integer(Integer::U64(msgid)),
-                                        Value::String(method.to_owned()),
-                                        Value::Array(params.to_owned())]);
+            let val = rpc_args!(0, msgid, method.to_owned(), params.to_owned());
             try!(write_value(writer, &val));
         }
         &RpcMessage::RpcResponse{msgid, ref error, ref result} => {
-            let val = Value::Array(vec![Value::Integer(Integer::U64(1)),
-                                        Value::Integer(Integer::U64(msgid)),
-                                        error.to_owned(),
-                                        result.to_owned()]);
+            let val = rpc_args!(1, msgid, error.to_owned(), result.to_owned());
             try!(write_value(writer, &val));
         }
         &RpcMessage::RpcNotification{ref method, ref params} => {
-            let val = Value::Array(vec![Value::Integer(Integer::U64(2)),
-                                        Value::String(method.to_owned()),
-                                        Value::Array(params.to_owned())]);
+            let val = rpc_args!(2, method.to_owned(), params.to_owned());
             try!(write_value(writer, &val));
         }
     };
     Ok(())
+}
+
+pub trait IntoVal<T> {
+    fn into_val(self) -> T;
+}
+
+impl IntoVal<Value> for bool {
+    fn into_val(self) -> Value {
+        Value::Boolean(self)
+    }
+}
+
+impl IntoVal<Value> for u64 {
+    fn into_val(self) -> Value {
+        Value::Integer(Integer::U64(self))
+    }
+}
+
+impl IntoVal<Value> for String {
+    fn into_val(self) -> Value {
+        Value::String(self)
+    }
+}
+
+impl IntoVal<Value> for Vec<Value> {
+    fn into_val(self) -> Value {
+        Value::Array(self)
+    }
+}
+
+impl IntoVal<Value> for Value {
+    fn into_val(self) -> Value {
+        self
+    }
 }
 
 #[cfg(test)]
