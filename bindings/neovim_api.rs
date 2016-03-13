@@ -11,12 +11,36 @@ pub enum ExtType {
 }
 
 impl ExtType {
-    pub fn from_typ(typ: u64) -> Result<ExtType, String> {
+    pub fn from_typ(typ: i8) -> Result<ExtType, String> {
         match typ {
         {% for typename in exttypes %}
         {{exttypes[typename]}} => Ok(ExtType::{{typename}}),
         {% endfor %}
         _ => Err("Not supported type".to_owned()),
+        }
+    }
+}
+
+impl FromVal<Value> for Window {
+    fn from_val(val: Value) -> Self {
+        Window {
+            code_data: val,
+        }
+    }
+}
+
+impl FromVal<Value> for Tabpage {
+    fn from_val(val: Value) -> Self {
+        Tabpage {
+            code_data: val,
+        }
+    }
+}
+
+impl FromVal<Value> for Buffer {
+    fn from_val(val: Value) -> Self {
+        Buffer {
+            code_data: val,
         }
     }
 }

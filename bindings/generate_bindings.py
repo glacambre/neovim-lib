@@ -69,9 +69,9 @@ class NeovimTypeVal:
         }
     # msgpack extension types
     EXTTYPES = {
-            'Window': 'u64',
-            'Buffer': 'u64',
-            'Tabpage': 'u64',
+            'Window': 'Window',
+            'Buffer': 'Buffer',
+            'Tabpage': 'Tabpage',
         }
     # Unbound Array types
     UNBOUND_ARRAY = re.compile('ArrayOf\(\s*(\w+)\s*\)')

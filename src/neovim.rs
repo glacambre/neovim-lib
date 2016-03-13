@@ -6,6 +6,18 @@ pub struct Neovim {
     pub session: Session,
 }
 
+pub struct Window {
+    code_data: Value,
+}
+
+pub struct Buffer {
+    code_data: Value,
+}
+
+pub struct Tabpage {
+    code_data: Value,
+}
+
 pub fn map_generic_error(err: Value) -> String {
     match err {
         Value::String(val) => val.to_owned(),
