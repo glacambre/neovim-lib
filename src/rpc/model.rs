@@ -113,7 +113,7 @@ pub trait FromVal<T> {
 }
 
 impl FromVal<Value> for () {
-    fn from_val(val: Value) -> Self {
+    fn from_val(_: Value) -> Self {
         ()
     }
 }
@@ -127,12 +127,12 @@ impl FromVal<Value> for Value {
 impl FromVal<Value> for Vec<String> {
     fn from_val(val: Value) -> Self {
         if let Value::Array(arr) = val{
-            arr.iter().map(|v| {
+            return arr.iter().map(|v| {
                 if let &Value::String(ref v) = v {
-                    return v.to_owned();
+                    return v.to_string();
                 }
                 panic!("Can't convert to string");
-            });
+            }).collect();
         }
         panic!("Can't convert to string");
     }
@@ -167,13 +167,15 @@ impl FromVal<Value> for (u64, u64) {
             if res.len() != 2 {
                 panic!("Array length must be 2");
             }
-            let p1 = if let &Value::Integer(Integer::U64(ref p1)) = res[0] {
+            let p1_val: &Value = &res[0];
+            let p2_val: &Value = &res[1];
+            let p1 = if let &Value::Integer(Integer::U64(ref p1)) = p1_val {
                 *p1
             } else {
                 panic!("Can't get u64 value at position 0");
             };
 
-            let p2 = if let &Value::Integer(Integer::U64(ref p2)) = res[1] {
+            let p2 = if let &Value::Integer(Integer::U64(ref p2)) = p2_val {
                 *p2
             } else {
                 panic!("Can't get u64 value at position 1");
