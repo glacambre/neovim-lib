@@ -127,10 +127,15 @@ class Function:
         self.fun = nvim_fun
         self.parameters = []
         self.name =  self.fun['name']
+        self.ext = not self.name.startswith('vim')
         try:
             self.return_type = NeovimTypeVal(self.fun['return_type'])
-            for param in self.fun['parameters']:
-                self.parameters.append(NeovimTypeVal(*param))
+            if self.ext:
+                for param in self.fun['parameters'][1:]:
+                    self.parameters.append(NeovimTypeVal(*param))
+            else:
+                for param in self.fun['parameters']:
+                    self.parameters.append(NeovimTypeVal(*param))
         except UnsupportedType as ex:
             print('Found unsupported type(%s) when adding function %s(), skipping' % (ex,self.name))
             return
