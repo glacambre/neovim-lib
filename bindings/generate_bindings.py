@@ -112,7 +112,7 @@ class NeovimTypeVal:
         if typename in cls.SIMPLETYPES_REF:
             return cls.SIMPLETYPES_REF[typename]
         elif typename in cls.EXTTYPES:
-            return cls.EXTTYPES[typename]
+            return "&%s" % cls.EXTTYPES[typename]
         elif cls.UNBOUND_ARRAY.match(typename):
             m = cls.UNBOUND_ARRAY.match(typename)
             return 'Vec<%s>' % cls.nativeTypeVal(m.groups()[0])

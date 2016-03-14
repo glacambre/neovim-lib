@@ -124,37 +124,11 @@ impl FromVal<Value> for Value {
     }
 }
 
-impl FromVal<Value> for Vec<String> {
-    fn from_val(val: Value) -> Self {
-        if let Value::Array(arr) = val{
-            return arr.iter().map(|v| {
-                if let &Value::String(ref v) = v {
-                    return v.to_string();
-                }
-                panic!("Can't convert to string");
-            }).collect();
-        }
-        panic!("Can't convert to string");
-    }
-}
-
-impl FromVal<Value> for Vec<Value> {
-    fn from_val(val: Value) -> Self {
-        if let Value::Array(arr) = val {
-            return arr;
-        }
-        panic!("Can't convert to string");
-    }
-}
-
-impl FromVal<Value> for Vec<u64> {
+impl <T: FromVal<Value>> FromVal<Value> for Vec<T> {
     fn from_val(val: Value) -> Self {
         if let Value::Array(arr) = val {
             return arr.iter().map(|v| {
-                if let &Value::Integer(Integer::U64(ref res)) = v {
-                    return *res;
-                }
-                panic!("Can't convert to u64");
+                T::from_val(v.clone())
             }).collect();
         }
         panic!("Can't convert to string");

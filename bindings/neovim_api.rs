@@ -3,28 +3,23 @@
 use neovim::*;
 use rmp::Value;
 use rpc::*;
-use session::Session;
 
 {% for typename in exttypes %}
-pub struct {{ typename }} <'a> {
+pub struct {{ typename }} {
     code_data: Value,
-    code: u64,
-    session: &'a Session,
 }
 
-impl <'a> {{ typename }} <'a> {
-    pub fn new(session: &'a Session, code_data: Value) -> {{ typename }} {
+impl {{ typename }} {
+    pub fn new(code_data: Value) -> {{ typename }} {
         {{ typename }} {
             code_data: code_data,
-            code: {{exttypes[typename]}},
-            session: session,
         }
     }
 
     {% for f in functions %}
     {% if f.ext and f.name.startswith(typename.lower()) %}
-    pub fn {{f.name}}(&mut self, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, String> {
-        self.session.call("{{f.name}}",
+    pub fn {{f.name}}(&self, neovim: &mut Neovim, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, String> {
+        neovim.session.call("{{f.name}}",
                           &call_args![self.code_data.clone()
                           {% if f.parameters|count > 0 %}
                           , {{ f.parameters|map(attribute = "name")|join(", ") }}
@@ -39,29 +34,19 @@ impl <'a> {{ typename }} <'a> {
 
 {% endfor %}
 
-impl FromVal<Value> for Window {
+{% for typename in exttypes %}
+impl FromVal<Value> for {{ typename }} {
     fn from_val(val: Value) -> Self {
-        Window {
-            code_data: val,
-        }
+        {{ typename }}::new(val)
     }
 }
 
-impl FromVal<Value> for Tabpage {
-    fn from_val(val: Value) -> Self {
-        Tabpage {
-            code_data: val,
-        }
+impl <'a> IntoVal<Value> for &'a {{typename}} {
+    fn into_val(self) -> Value {
+        self.code_data.clone()
     }
 }
-
-impl FromVal<Value> for Buffer {
-    fn from_val(val: Value) -> Self {
-        Buffer {
-            code_data: val,
-        }
-    }
-}
+{% endfor %}
 
 pub trait NeovimApi {
     {% for f in functions %}
