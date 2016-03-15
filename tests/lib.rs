@@ -5,6 +5,7 @@ use neovim_lib::session::Session;
 use neovim_lib::neovim::Neovim;
 use neovim_lib::neovim_api::NeovimApi;
 
+#[ignore]
 #[test]
 fn start_stop_test() {
     let session = if cfg!(target_os = "windows") {

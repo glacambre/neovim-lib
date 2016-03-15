@@ -52,17 +52,15 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
         thread::spawn(move || {
             loop {
                 let msg = model::decode(&mut reader).expect("Filed to decode message");
-                // println!("Get message {:?}", msg);
+                println!("Get message {:?}", msg);
                 match msg {
                     model::RpcMessage::RpcResponse{msgid, result, error} => {
                         let sender = queue.lock().unwrap().remove(&msgid).unwrap();
                         if error != Value::Nil {
                             sender.send(Err(error)).unwrap();
                         }
-                        if result != Value::Nil {
-                            sender.send(Ok(result)).unwrap();
-                        }
-                    },
+                        sender.send(Ok(result)).unwrap();
+                    }
                     _ => println!("Unknown type"),
                 };
             }
