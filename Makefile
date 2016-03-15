@@ -6,3 +6,6 @@ test-out:
 
 generate:
 	python bindings/generate_bindings.py nvim src
+
+doc:
+	cargo doc --no-deps

@@ -26,6 +26,7 @@ macro_rules! call_args {
 }
 
 impl Session {
+    /// Connect to nvim instance via tcp
     pub fn new_tcp(addr: &str) -> Result<Session> {
         let stream = try!(TcpStream::connect(addr));
         let read = try!(stream.try_clone());
@@ -41,7 +42,7 @@ impl Session {
         }
     }
 
-    /// Connect to a Neovim instance by spawning a new one.
+    /// Connect to a Neovim instance by spawning a new one
     pub fn new_child_path(program: &str) -> Result<Session> {
         let mut child = try!(Command::new(program)
                                  .arg("--embed")
@@ -58,7 +59,23 @@ impl Session {
         Ok(Session { client: ClientConnection::Child(Client::new(stdout, stdin), child) })
     }
 
-    /// Sync call
+    /// Start processing rpc response and notifications
+    pub fn start_event_loop_cb<F: Fn(&str, Vec<Value>) + Send + 'static>(&mut self, cb: F) {
+        match self.client {
+            ClientConnection::Child(ref mut client, _) => client.start_event_loop_cb(cb),
+            ClientConnection::Tcp(ref mut client) => client.start_event_loop_cb(cb),
+        }
+    }
+
+    /// Start processing rpc response and notifications
+    pub fn start_event_loop(&mut self) {
+        match self.client {
+            ClientConnection::Child(ref mut client, _) => client.start_event_loop(),
+            ClientConnection::Tcp(ref mut client) => client.start_event_loop(),
+        }
+    }
+
+    /// Sync call. Call can be made only after event loop begin processing
     pub fn call(&mut self, method: &str, args: &Vec<Value>) -> result::Result<Value, Value> {
         match self.client {
             ClientConnection::Child(ref mut client, _) => client.call(method, args),

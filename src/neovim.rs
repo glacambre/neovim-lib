@@ -6,6 +6,7 @@ pub struct Neovim {
     pub session: Session,
 }
 
+#[doc(hidden)]
 pub fn map_generic_error(err: Value) -> String {
     match err {
         Value::String(val) => val.to_owned(),
@@ -13,6 +14,7 @@ pub fn map_generic_error(err: Value) -> String {
     }
 }
 
+#[doc(hidden)]
 pub fn map_result<T: FromVal<Value>>(val: Value) -> T {
     T::from_val(val)
 }
