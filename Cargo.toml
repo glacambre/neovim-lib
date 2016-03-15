@@ -6,6 +6,7 @@ license = "LGPL-3.0"
 descripton = "msgpack-rpc neovim client"
 repository = "https://github.com/daa84/neovim-lib"
 keywords = ["neovim"]
+exclude = ["generate.bat", "Makefile"]
 
 [dependencies]
 rmp = "0.7"
