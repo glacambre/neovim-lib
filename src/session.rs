@@ -14,7 +14,6 @@ pub struct Session {
     client: ClientConnection,
 }
 
-#[macro_export]
 macro_rules! call_args {
     () => (Vec::new());
     ($($e:expr), *) => {{

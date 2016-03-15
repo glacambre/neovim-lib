@@ -14,7 +14,7 @@ fn start_stop_test() {
     };
 
     let mut nvim = Neovim::new(session);
-    println!("{:?}", nvim.vim_get_api_info().unwrap());
+    println!("{:?}", nvim.get_api_info().unwrap());
 }
 
 #[ignore]
@@ -22,5 +22,18 @@ fn start_stop_test() {
 fn remote_test() {
     let session = Session::new_tcp("127.0.0.1:6666").unwrap();
     let mut nvim = Neovim::new(session);
-    nvim.vim_command("echo \"Test\"").unwrap();
+    nvim.command("echo \"Test\"").unwrap();
 }
+
+#[ignore]
+#[test]
+fn edit_test() {
+    let session = Session::new_tcp("127.0.0.1:6666").unwrap();
+    let mut nvim = Neovim::new(session);
+    let buffers = nvim.get_buffers().unwrap();
+    buffers[0].set_line(&mut nvim, 0, "replace first line").unwrap();
+    nvim.command("vsplit").unwrap();
+    let windows = nvim.get_windows().unwrap();
+    windows[0].set_width(&mut nvim, 10).unwrap();
+}
+
