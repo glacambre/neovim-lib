@@ -18,6 +18,8 @@
 extern crate rmp;
 extern crate rmp_serialize;
 extern crate rustc_serialize;
+#[macro_use]
+extern crate log;
 
 mod rpc;
 #[macro_use]
