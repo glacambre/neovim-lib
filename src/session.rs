@@ -4,6 +4,7 @@ use std::io::Result;
 use std::io::{Error, ErrorKind};
 use std::process::Stdio;
 use std::process::{Command, Child, ChildStdin, ChildStdout};
+use std::time::Duration;
 
 use rmp::Value;
 
@@ -12,6 +13,7 @@ use rpc::Client;
 /// An active Neovim session.
 pub struct Session {
     client: ClientConnection,
+    timeout: Option<Duration>,
 }
 
 macro_rules! call_args {
@@ -30,7 +32,10 @@ impl Session {
     pub fn new_tcp(addr: &str) -> Result<Session> {
         let stream = try!(TcpStream::connect(addr));
         let read = try!(stream.try_clone());
-        Ok(Session { client: ClientConnection::Tcp(Client::new(stream, read)) })
+        Ok(Session {
+            client: ClientConnection::Tcp(Client::new(stream, read)),
+            timeout: Some(Duration::new(5, 0)),
+        })
     }
 
     /// Connect to a Neovim instance by spawning a new one.
@@ -56,7 +61,19 @@ impl Session {
                               .take()
                               .ok_or_else(|| Error::new(ErrorKind::Other, "Can't open stdin")));
 
-        Ok(Session { client: ClientConnection::Child(Client::new(stdout, stdin), child) })
+        Ok(Session {
+            client: ClientConnection::Child(Client::new(stdout, stdin), child),
+            timeout: Some(Duration::new(5, 0)),
+        })
+    }
+
+    /// set call timeout
+    pub fn set_timeout(&mut self, timeout: Duration) {
+        self.timeout = Some(timeout);
+    }
+
+    pub fn set_infinity_timeout(&mut self) {
+        self.timeout = None;
     }
 
     /// Start processing rpc response and notifications
@@ -78,8 +95,8 @@ impl Session {
     /// Sync call. Call can be made only after event loop begin processing
     pub fn call(&mut self, method: &str, args: &Vec<Value>) -> result::Result<Value, Value> {
         match self.client {
-            ClientConnection::Child(ref mut client, _) => client.call(method, args),
-            ClientConnection::Tcp(ref mut client) => client.call(method, args),
+            ClientConnection::Child(ref mut client, _) => client.call(method, args, self.timeout),
+            ClientConnection::Tcp(ref mut client) => client.call(method, args, self.timeout),
         }
     }
 }

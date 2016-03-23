@@ -1,6 +1,7 @@
 use std::io::{Read, Write};
 use std::thread;
 use std::thread::JoinHandle;
+use std::time::Duration;
 use std::collections::HashMap;
 use std::sync::{mpsc, Mutex, Arc};
 
@@ -39,11 +40,31 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
         }
     }
 
-    pub fn call(&mut self, method: &str, args: &Vec<Value>) -> Result<Value, Value> {
+    pub fn call_timeout(&mut self, method: &str, args: &Vec<Value>, dur: Duration) -> Result<Value, Value> {
         if self.dispatch_guard.is_none() {
             return Err(Value::String("Event loop not started".to_owned()));
         }
 
+        let mut wait_time = dur.as_secs() * 1_000_000_000  + dur.subsec_nanos() as u64;
+
+        let receiver = self.send_msg(method, args);
+
+        loop {
+            match receiver.try_recv() {
+                Err(mpsc::TryRecvError::Empty) => {
+                    thread::sleep(Duration::new(0, 1000_000));
+                    wait_time -= 1000_000;
+                    if wait_time <= 0 {
+                        return Err(Value::String("Wait timeout".to_owned()));
+                    }
+                },
+                Err(mpsc::TryRecvError::Disconnected) => return Err(Value::String("Channel disconnected".to_owned())),
+                Ok(val) => return val,
+            };
+        }
+    }
+
+    fn send_msg(&mut self, method: &str, args: &Vec<Value>) -> mpsc::Receiver<Result<Value, Value>> {
         let msgid = self.msgid_counter;
         self.msgid_counter += 1;
 
@@ -57,6 +78,23 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
         self.queue.lock().unwrap().insert(msgid, sender);
 
         model::encode(&mut self.writer, &req).expect("Error send message");
+        receiver
+    }
+
+    pub fn call(&mut self, method: &str, args: &Vec<Value>, dur: Option<Duration>) -> Result<Value, Value> {
+        match dur {
+            Some(dur) => self.call_timeout(method, args, dur),
+            None => self.call_inf(method, args),
+        }
+    }
+
+    pub fn call_inf(&mut self, method: &str, args: &Vec<Value>) -> Result<Value, Value> {
+        if self.dispatch_guard.is_none() {
+            return Err(Value::String("Event loop not started".to_owned()));
+        }
+
+        let receiver = self.send_msg(method, args);
+
         receiver.recv().unwrap()
     }
 
