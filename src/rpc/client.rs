@@ -21,7 +21,7 @@ pub struct Client<R: Read + Send + 'static, W: Write> {
 
 impl<R: Read + Send + 'static, W: Write> Client<R, W> {
 
-    pub fn start_event_loop_cb<F: Fn(&str, Vec<Value>) + Send + 'static>(&mut self, cb: F) {
+    pub fn start_event_loop_cb<F: FnMut(&str, Vec<Value>) + Send + 'static>(&mut self, cb: F) {
         self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(), self.reader.take().unwrap(), cb))
     }
 
@@ -98,7 +98,7 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
         receiver.recv().unwrap()
     }
 
-    fn dispatch_thread<F: Fn(&str, Vec<Value>) + Send + 'static>(queue: Queue, mut reader: R, cb: F) -> JoinHandle<()> {
+    fn dispatch_thread<F: FnMut(&str, Vec<Value>) + Send + 'static>(queue: Queue, mut reader: R, mut cb: F) -> JoinHandle<()> {
         thread::spawn(move || {
             loop {
                 let msg = model::decode(&mut reader).expect("Filed to decode message");

@@ -77,7 +77,7 @@ impl Session {
     }
 
     /// Start processing rpc response and notifications
-    pub fn start_event_loop_cb<F: Fn(&str, Vec<Value>) + Send + 'static>(&mut self, cb: F) {
+    pub fn start_event_loop_cb<F: FnMut(&str, Vec<Value>) + Send + 'static>(&mut self, cb: F) {
         match self.client {
             ClientConnection::Child(ref mut client, _) => client.start_event_loop_cb(cb),
             ClientConnection::Tcp(ref mut client) => client.start_event_loop_cb(cb),
