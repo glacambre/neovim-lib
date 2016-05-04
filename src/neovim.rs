@@ -1,6 +1,7 @@
 use session::Session;
 use rpc::*;
 use rmp::Value;
+use neovim_api::NeovimApi;
 
 pub struct Neovim {
     pub session: Session,
@@ -47,5 +48,12 @@ impl Neovim {
             .call("ui_try_resize", &call_args!(width, height))
             .map_err(map_generic_error)
             .map(|_| ())
+    }
+
+    /// Send a quit command to Nvim.
+    /// The quit command is 'qa!' which will make Nvim quit without
+    /// saving anything.
+    pub fn quit_no_save(&mut self) -> Result<(), String> {
+        self.command("qa!")
     }
 }
