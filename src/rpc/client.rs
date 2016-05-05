@@ -15,18 +15,25 @@ pub struct Client<R: Read + Send + 'static, W: Write> {
     reader: Option<R>,
     writer: W,
     dispatch_guard: Option<JoinHandle<()>>,
+    event_loop_started: bool,
     queue: Queue,
     msgid_counter: u64,
 }
 
 impl<R: Read + Send + 'static, W: Write> Client<R, W> {
 
+    pub fn take_dispatch_guard(&mut self) -> JoinHandle<()> {
+        self.dispatch_guard.take().expect("Can only take join handle after running event loop")
+    }
+
     pub fn start_event_loop_cb<F: FnMut(&str, Vec<Value>) + Send + 'static>(&mut self, cb: F) {
-        self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(), self.reader.take().unwrap(), cb))
+        self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(), self.reader.take().unwrap(), cb));
+        self.event_loop_started = true;
     }
 
     pub fn start_event_loop(&mut self) {
-        self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(), self.reader.take().unwrap(), |_, _| ()))
+        self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(), self.reader.take().unwrap(), |_, _| ()));
+        self.event_loop_started = true;
     }
 
     pub fn new(reader: R, writer: W) -> Self {
@@ -37,11 +44,12 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
             msgid_counter: 0,
             queue: queue.clone(),
             dispatch_guard: None,
+            event_loop_started: false,
         }
     }
 
     pub fn call_timeout(&mut self, method: &str, args: &Vec<Value>, dur: Duration) -> Result<Value, Value> {
-        if self.dispatch_guard.is_none() {
+        if !self.event_loop_started {
             return Err(Value::String("Event loop not started".to_owned()));
         }
 
@@ -89,7 +97,7 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
     }
 
     pub fn call_inf(&mut self, method: &str, args: &Vec<Value>) -> Result<Value, Value> {
-        if self.dispatch_guard.is_none() {
+        if !self.event_loop_started {
             return Err(Value::String("Event loop not started".to_owned()));
         }
 
@@ -101,7 +109,13 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
     fn dispatch_thread<F: FnMut(&str, Vec<Value>) + Send + 'static>(queue: Queue, mut reader: R, mut cb: F) -> JoinHandle<()> {
         thread::spawn(move || {
             loop {
-                let msg = model::decode(&mut reader).expect("Filed to decode message");
+                let msg = match model::decode(&mut reader) {
+                    Ok(msg) => msg,
+                    Err(e) => {
+                        debug!("Error reading {}", e);
+                        return;
+                    },
+                };
                 debug!("Get message {:?}", msg);
                 match msg {
                     model::RpcMessage::RpcResponse{msgid, result, error} => {

@@ -4,6 +4,7 @@ use std::io::Result;
 use std::io::{Error, ErrorKind};
 use std::process::Stdio;
 use std::process::{Command, Child, ChildStdin, ChildStdout};
+use std::thread::JoinHandle;
 use std::time::Duration;
 
 use rmp::Value;
@@ -67,7 +68,7 @@ impl Session {
         })
     }
 
-    /// set call timeout
+    /// Set call timeout
     pub fn set_timeout(&mut self, timeout: Duration) {
         self.timeout = Some(timeout);
     }
@@ -97,6 +98,16 @@ impl Session {
         match self.client {
             ClientConnection::Child(ref mut client, _) => client.call(method, args, self.timeout),
             ClientConnection::Tcp(ref mut client) => client.call(method, args, self.timeout),
+        }
+    }
+
+    /// Wait dispatch thread to finish.
+    ///
+    /// This can happens in case child process connection is lost for some reason.
+    pub fn take_dispatch_guard(&mut self) -> JoinHandle<()> {
+        match self.client {
+            ClientConnection::Child(ref mut client, _) => client.take_dispatch_guard(),
+            ClientConnection::Tcp(ref mut client) => client.take_dispatch_guard(),
         }
     }
 }
