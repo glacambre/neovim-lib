@@ -1,5 +1,6 @@
 use std::result;
 use std::net::TcpStream;
+use unix_socket::UnixStream;
 use std::io::Result;
 use std::io::{Error, ErrorKind};
 use std::process::Stdio;
@@ -35,6 +36,16 @@ impl Session {
         let read = stream.try_clone()?;
         Ok(Session {
             client: ClientConnection::Tcp(Client::new(stream, read)),
+            timeout: Some(Duration::new(5, 0)),
+        })
+    }
+
+    /// Connect to nvim instance via unix socket
+    pub fn new_unix_socket(path: &str) -> Result<Session> {
+        let stream = try!(UnixStream::connect(path));
+        let read = try!(stream.try_clone());
+        Ok(Session {
+            client: ClientConnection::UnixSocket(Client::new(stream, read)),
             timeout: Some(Duration::new(5, 0)),
         })
     }
@@ -81,6 +92,7 @@ impl Session {
         match self.client {
             ClientConnection::Child(ref mut client, _) => client.start_event_loop_cb(cb),
             ClientConnection::Tcp(ref mut client) => client.start_event_loop_cb(cb),
+            ClientConnection::UnixSocket(ref mut client) => client.start_event_loop_cb(cb),
         }
     }
 
@@ -89,6 +101,7 @@ impl Session {
         match self.client {
             ClientConnection::Child(ref mut client, _) => client.start_event_loop(),
             ClientConnection::Tcp(ref mut client) => client.start_event_loop(),
+            ClientConnection::UnixSocket(ref mut client) => client.start_event_loop(),
         }
     }
 
@@ -97,6 +110,7 @@ impl Session {
         match self.client {
             ClientConnection::Child(ref mut client, _) => client.call(method, args, self.timeout),
             ClientConnection::Tcp(ref mut client) => client.call(method, args, self.timeout),
+            ClientConnection::UnixSocket(ref mut client) => client.call(method, args, self.timeout),
         }
     }
 
@@ -107,6 +121,7 @@ impl Session {
         match self.client {
             ClientConnection::Child(ref mut client, _) => client.take_dispatch_guard(),
             ClientConnection::Tcp(ref mut client) => client.take_dispatch_guard(),
+            ClientConnection::UnixSocket(ref mut client) => client.take_dispatch_guard(),
         }
     }
 }
@@ -114,4 +129,5 @@ impl Session {
 enum ClientConnection {
     Child(Client<ChildStdout, ChildStdin>, Child),
     Tcp(Client<TcpStream, TcpStream>),
+    UnixSocket(Client<UnixStream, UnixStream>),
 }
