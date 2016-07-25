@@ -1,4 +1,4 @@
-// Auto generated 2016-03-15 11:32:56.533000
+// Auto generated 2016-07-25 17:57:53.046000
 
 use neovim::*;
 use rmp::Value;
@@ -381,6 +381,7 @@ pub trait NeovimApi {
     fn subscribe(&mut self, event: &str) -> Result<(), String>;
     fn unsubscribe(&mut self, event: &str) -> Result<(), String>;
     fn name_to_color(&mut self, name: &str) -> Result<u64, String>;
+    fn get_color_map(&mut self) -> Result<Vec<(Value, Value)>, String>;
     fn get_api_info(&mut self) -> Result<Vec<Value>, String>;
     }
 
@@ -618,6 +619,13 @@ impl NeovimApi for Neovim {
     fn name_to_color(&mut self, name: &str) -> Result<u64, String> {
         self.session
             .call("vim_name_to_color", &call_args![name])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+
+    fn get_color_map(&mut self) -> Result<Vec<(Value, Value)>, String> {
+        self.session
+            .call("vim_get_color_map", &call_args![])
             .map(map_result)
             .map_err(map_generic_error)
     }

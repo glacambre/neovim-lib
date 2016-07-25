@@ -124,6 +124,15 @@ impl FromVal<Value> for Value {
     }
 }
 
+impl FromVal<Value> for Vec<(Value, Value)> {
+    fn from_val(val: Value) -> Self {
+        if let Value::Map(vec) = val {
+            return vec;
+        }
+        panic!("Not supported value for map");
+    }
+}
+
 impl <T: FromVal<Value>> FromVal<Value> for Vec<T> {
     fn from_val(val: Value) -> Self {
         if let Value::Array(arr) = val {

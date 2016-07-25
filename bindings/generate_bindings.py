@@ -56,6 +56,7 @@ class NeovimTypeVal:
             'Boolean': 'bool',
             'String': '&str',
             'Object': 'Value',
+            'Dictionary': 'Vec<(Value, Value)>',
         }
 
     SIMPLETYPES_VAL = {
@@ -66,6 +67,7 @@ class NeovimTypeVal:
             'Boolean': 'bool',
             'String': 'String',
             'Object': 'Value',
+            'Dictionary': 'Vec<(Value, Value)>',
         }
     # msgpack extension types
     EXTTYPES = {
