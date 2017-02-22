@@ -15,7 +15,5 @@ exclude = ["generate.bat", "Makefile"]
 travis-ci = { repository = "https://github.com/daa84/neovim-lib", branch = "master"  }
 
 [dependencies]
-rmp = "0.7"
-rmp-serialize = "0.7"
-rustc-serialize = "0.3"
+rmp = "0.8"
 log = "0.3"

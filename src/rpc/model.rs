@@ -1,8 +1,8 @@
 
-use rmp::decode::value::read_value;
 use rmp::encode::value::write_value;
-use rmp::Value;
-use rmp::value::Integer;
+use super::value::read_value;
+use super::value::Value;
+use super::value::Integer;
 use std::io;
 use std::io::{Read, Write};
 use std::error::Error;
@@ -133,12 +133,12 @@ impl FromVal<Value> for Vec<(Value, Value)> {
     }
 }
 
-impl <T: FromVal<Value>> FromVal<Value> for Vec<T> {
+impl<T: FromVal<Value>> FromVal<Value> for Vec<T> {
     fn from_val(val: Value) -> Self {
         if let Value::Array(arr) = val {
-            return arr.iter().map(|v| {
-                T::from_val(v.clone())
-            }).collect();
+            return arr.iter()
+                      .map(|v| T::from_val(v.clone()))
+                      .collect();
         }
         panic!("Can't convert to string");
     }

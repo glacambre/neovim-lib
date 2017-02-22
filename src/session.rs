@@ -7,7 +7,7 @@ use std::process::{Command, Child, ChildStdin, ChildStdout};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
-use rmp::Value;
+use rpc::value::Value;
 
 use rpc::Client;
 

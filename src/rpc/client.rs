@@ -5,7 +5,7 @@ use std::time::Duration;
 use std::collections::HashMap;
 use std::sync::{mpsc, Mutex, Arc};
 
-use rmp::Value;
+use super::value::Value;
 
 use super::model;
 

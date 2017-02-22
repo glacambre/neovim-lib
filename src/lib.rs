@@ -16,8 +16,6 @@
 //! windows[0].set_width(&mut nvim, 10).unwrap();
 //! ```
 extern crate rmp;
-extern crate rmp_serialize;
-extern crate rustc_serialize;
 #[macro_use]
 extern crate log;
 
