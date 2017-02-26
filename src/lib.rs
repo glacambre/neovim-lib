@@ -28,3 +28,5 @@ pub mod neovim_api;
 pub use neovim::Neovim;
 pub use neovim_api::NeovimApi;
 pub use session::Session;
+
+pub use rpc::value::{Value, Integer, Float};
