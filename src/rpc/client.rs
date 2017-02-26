@@ -21,18 +21,19 @@ pub struct Client<R: Read + Send + 'static, W: Write> {
 }
 
 impl<R: Read + Send + 'static, W: Write> Client<R, W> {
-
     pub fn take_dispatch_guard(&mut self) -> JoinHandle<()> {
         self.dispatch_guard.take().expect("Can only take join handle after running event loop")
     }
 
     pub fn start_event_loop_cb<F: FnMut(&str, Vec<Value>) + Send + 'static>(&mut self, cb: F) {
-        self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(), self.reader.take().unwrap(), cb));
+        self.dispatch_guard =
+            Some(Self::dispatch_thread(self.queue.clone(), self.reader.take().unwrap(), cb));
         self.event_loop_started = true;
     }
 
     pub fn start_event_loop(&mut self) {
-        self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(), self.reader.take().unwrap(), |_, _| ()));
+        self.dispatch_guard =
+            Some(Self::dispatch_thread(self.queue.clone(), self.reader.take().unwrap(), |_, _| ()));
         self.event_loop_started = true;
     }
 
@@ -48,12 +49,16 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
         }
     }
 
-    pub fn call_timeout(&mut self, method: &str, args: &Vec<Value>, dur: Duration) -> Result<Value, Value> {
+    pub fn call_timeout(&mut self,
+                        method: &str,
+                        args: &Vec<Value>,
+                        dur: Duration)
+                        -> Result<Value, Value> {
         if !self.event_loop_started {
             return Err(Value::String("Event loop not started".to_owned()));
         }
 
-        let mut wait_time = dur.as_secs() * 1_000_000_000  + dur.subsec_nanos() as u64;
+        let mut wait_time = dur.as_secs() * 1_000_000_000 + dur.subsec_nanos() as u64;
 
         let receiver = self.send_msg(method, args);
 
@@ -65,14 +70,19 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
                     if wait_time <= 0 {
                         return Err(Value::String("Wait timeout".to_owned()));
                     }
-                },
-                Err(mpsc::TryRecvError::Disconnected) => return Err(Value::String("Channel disconnected".to_owned())),
+                }
+                Err(mpsc::TryRecvError::Disconnected) => {
+                    return Err(Value::String("Channel disconnected".to_owned()))
+                }
                 Ok(val) => return val,
             };
         }
     }
 
-    fn send_msg(&mut self, method: &str, args: &Vec<Value>) -> mpsc::Receiver<Result<Value, Value>> {
+    fn send_msg(&mut self,
+                method: &str,
+                args: &Vec<Value>)
+                -> mpsc::Receiver<Result<Value, Value>> {
         let msgid = self.msgid_counter;
         self.msgid_counter += 1;
 
@@ -89,7 +99,11 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
         receiver
     }
 
-    pub fn call(&mut self, method: &str, args: &Vec<Value>, dur: Option<Duration>) -> Result<Value, Value> {
+    pub fn call(&mut self,
+                method: &str,
+                args: &Vec<Value>,
+                dur: Option<Duration>)
+                -> Result<Value, Value> {
         match dur {
             Some(dur) => self.call_timeout(method, args, dur),
             None => self.call_inf(method, args),
@@ -106,31 +120,32 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
         receiver.recv().unwrap()
     }
 
-    fn dispatch_thread<F: FnMut(&str, Vec<Value>) + Send + 'static>(queue: Queue, mut reader: R, mut cb: F) -> JoinHandle<()> {
-        thread::spawn(move || {
-            loop {
-                let msg = match model::decode(&mut reader) {
-                    Ok(msg) => msg,
-                    Err(e) => {
-                        debug!("Error reading {}", e);
-                        return;
-                    },
-                };
-                debug!("Get message {:?}", msg);
-                match msg {
-                    model::RpcMessage::RpcResponse{msgid, result, error} => {
-                        let sender = queue.lock().unwrap().remove(&msgid).unwrap();
-                        if error != Value::Nil {
-                            sender.send(Err(error)).unwrap();
-                        }
-                        sender.send(Ok(result)).unwrap();
-                    },
-                    model::RpcMessage::RpcNotification{method, params} => {
-                        cb(&method, params);
-                    },
-                    _ => println!("Unknown type"),
-                };
-            }
+    fn dispatch_thread<F: FnMut(&str, Vec<Value>) + Send + 'static>(queue: Queue,
+                                                                    mut reader: R,
+                                                                    mut cb: F)
+                                                                    -> JoinHandle<()> {
+        thread::spawn(move || loop {
+            let msg = match model::decode(&mut reader) {
+                Ok(msg) => msg,
+                Err(e) => {
+                    debug!("Error reading {}", e);
+                    return;
+                }
+            };
+            debug!("Get message {:?}", msg);
+            match msg {
+                model::RpcMessage::RpcResponse { msgid, result, error } => {
+                    let sender = queue.lock().unwrap().remove(&msgid).unwrap();
+                    if error != Value::Nil {
+                        sender.send(Err(error)).unwrap();
+                    }
+                    sender.send(Ok(result)).unwrap();
+                }
+                model::RpcMessage::RpcNotification { method, params } => {
+                    cb(&method, params);
+                }
+                _ => println!("Unknown type"),
+            };
         })
     }
 }

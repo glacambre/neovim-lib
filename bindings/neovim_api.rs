@@ -1,7 +1,6 @@
 // Auto generated {{date}}
 
 use neovim::*;
-use rmp::Value;
 use rpc::*;
 
 {% for typename in exttypes %}

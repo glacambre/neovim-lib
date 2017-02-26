@@ -1,7 +1,6 @@
 // Auto generated 2016-07-25 17:57:53.046000
 
 use neovim::*;
-use rmp::Value;
 use rpc::*;
 
 pub struct Buffer {
@@ -15,30 +14,30 @@ impl Buffer {
 
     pub fn line_count(&self, neovim: &mut Neovim) -> Result<u64, String> {
         neovim.session
-              .call("buffer_line_count", &call_args![self.code_data.clone()])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_line_count", &call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_line(&self, neovim: &mut Neovim, index: u64) -> Result<String, String> {
         neovim.session
-              .call("buffer_get_line",
-                    &call_args![self.code_data.clone(), index])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_get_line",
+                  &call_args![self.code_data.clone(), index])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn set_line(&self, neovim: &mut Neovim, index: u64, line: &str) -> Result<(), String> {
         neovim.session
-              .call("buffer_set_line",
-                    &call_args![self.code_data.clone(), index, line])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_set_line",
+                  &call_args![self.code_data.clone(), index, line])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn del_line(&self, neovim: &mut Neovim, index: u64) -> Result<(), String> {
         neovim.session
-              .call("buffer_del_line",
-                    &call_args![self.code_data.clone(), index])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_del_line",
+                  &call_args![self.code_data.clone(), index])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_line_slice(&self,
                           neovim: &mut Neovim,
@@ -48,10 +47,10 @@ impl Buffer {
                           include_end: bool)
                           -> Result<Vec<String>, String> {
         neovim.session
-              .call("buffer_get_line_slice",
-                    &call_args![self.code_data.clone(), start, end, include_start, include_end])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_get_line_slice",
+                  &call_args![self.code_data.clone(), start, end, include_start, include_end])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn set_line_slice(&self,
                           neovim: &mut Neovim,
@@ -62,79 +61,79 @@ impl Buffer {
                           replacement: Vec<String>)
                           -> Result<(), String> {
         neovim.session
-              .call("buffer_set_line_slice",
-                    &call_args![self.code_data.clone(),
-                                start,
-                                end,
-                                include_start,
-                                include_end,
-                                replacement])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_set_line_slice",
+                  &call_args![self.code_data.clone(),
+                              start,
+                              end,
+                              include_start,
+                              include_end,
+                              replacement])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_var(&self, neovim: &mut Neovim, name: &str) -> Result<Value, String> {
         neovim.session
-              .call("buffer_get_var", &call_args![self.code_data.clone(), name])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_get_var", &call_args![self.code_data.clone(), name])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn set_var(&self, neovim: &mut Neovim, name: &str, value: Value) -> Result<Value, String> {
         neovim.session
-              .call("buffer_set_var",
-                    &call_args![self.code_data.clone(), name, value])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_set_var",
+                  &call_args![self.code_data.clone(), name, value])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_option(&self, neovim: &mut Neovim, name: &str) -> Result<Value, String> {
         neovim.session
-              .call("buffer_get_option",
-                    &call_args![self.code_data.clone(), name])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_get_option",
+                  &call_args![self.code_data.clone(), name])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn set_option(&self, neovim: &mut Neovim, name: &str, value: Value) -> Result<(), String> {
         neovim.session
-              .call("buffer_set_option",
-                    &call_args![self.code_data.clone(), name, value])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_set_option",
+                  &call_args![self.code_data.clone(), name, value])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_number(&self, neovim: &mut Neovim) -> Result<u64, String> {
         neovim.session
-              .call("buffer_get_number", &call_args![self.code_data.clone()])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_get_number", &call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_name(&self, neovim: &mut Neovim) -> Result<String, String> {
         neovim.session
-              .call("buffer_get_name", &call_args![self.code_data.clone()])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_get_name", &call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn set_name(&self, neovim: &mut Neovim, name: &str) -> Result<(), String> {
         neovim.session
-              .call("buffer_set_name", &call_args![self.code_data.clone(), name])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_set_name", &call_args![self.code_data.clone(), name])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn is_valid(&self, neovim: &mut Neovim) -> Result<bool, String> {
         neovim.session
-              .call("buffer_is_valid", &call_args![self.code_data.clone()])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_is_valid", &call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn insert(&self, neovim: &mut Neovim, lnum: u64, lines: Vec<String>) -> Result<(), String> {
         neovim.session
-              .call("buffer_insert",
-                    &call_args![self.code_data.clone(), lnum, lines])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_insert",
+                  &call_args![self.code_data.clone(), lnum, lines])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_mark(&self, neovim: &mut Neovim, name: &str) -> Result<(u64, u64), String> {
         neovim.session
-              .call("buffer_get_mark", &call_args![self.code_data.clone(), name])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_get_mark", &call_args![self.code_data.clone(), name])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn add_highlight(&self,
                          neovim: &mut Neovim,
@@ -145,10 +144,10 @@ impl Buffer {
                          col_end: u64)
                          -> Result<u64, String> {
         neovim.session
-              .call("buffer_add_highlight",
-                    &call_args![self.code_data.clone(), src_id, hl_group, line, col_start, col_end])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_add_highlight",
+                  &call_args![self.code_data.clone(), src_id, hl_group, line, col_start, col_end])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn clear_highlight(&self,
                            neovim: &mut Neovim,
@@ -157,10 +156,10 @@ impl Buffer {
                            line_end: u64)
                            -> Result<(), String> {
         neovim.session
-              .call("buffer_clear_highlight",
-                    &call_args![self.code_data.clone(), src_id, line_start, line_end])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("buffer_clear_highlight",
+                  &call_args![self.code_data.clone(), src_id, line_start, line_end])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
 }
 
@@ -175,93 +174,93 @@ impl Window {
 
     pub fn get_buffer(&self, neovim: &mut Neovim) -> Result<Buffer, String> {
         neovim.session
-              .call("window_get_buffer", &call_args![self.code_data.clone()])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("window_get_buffer", &call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_cursor(&self, neovim: &mut Neovim) -> Result<(u64, u64), String> {
         neovim.session
-              .call("window_get_cursor", &call_args![self.code_data.clone()])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("window_get_cursor", &call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn set_cursor(&self, neovim: &mut Neovim, pos: (u64, u64)) -> Result<(), String> {
         neovim.session
-              .call("window_set_cursor",
-                    &call_args![self.code_data.clone(), pos])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("window_set_cursor",
+                  &call_args![self.code_data.clone(), pos])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_height(&self, neovim: &mut Neovim) -> Result<u64, String> {
         neovim.session
-              .call("window_get_height", &call_args![self.code_data.clone()])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("window_get_height", &call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn set_height(&self, neovim: &mut Neovim, height: u64) -> Result<(), String> {
         neovim.session
-              .call("window_set_height",
-                    &call_args![self.code_data.clone(), height])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("window_set_height",
+                  &call_args![self.code_data.clone(), height])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_width(&self, neovim: &mut Neovim) -> Result<u64, String> {
         neovim.session
-              .call("window_get_width", &call_args![self.code_data.clone()])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("window_get_width", &call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn set_width(&self, neovim: &mut Neovim, width: u64) -> Result<(), String> {
         neovim.session
-              .call("window_set_width",
-                    &call_args![self.code_data.clone(), width])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("window_set_width",
+                  &call_args![self.code_data.clone(), width])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_var(&self, neovim: &mut Neovim, name: &str) -> Result<Value, String> {
         neovim.session
-              .call("window_get_var", &call_args![self.code_data.clone(), name])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("window_get_var", &call_args![self.code_data.clone(), name])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn set_var(&self, neovim: &mut Neovim, name: &str, value: Value) -> Result<Value, String> {
         neovim.session
-              .call("window_set_var",
-                    &call_args![self.code_data.clone(), name, value])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("window_set_var",
+                  &call_args![self.code_data.clone(), name, value])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_option(&self, neovim: &mut Neovim, name: &str) -> Result<Value, String> {
         neovim.session
-              .call("window_get_option",
-                    &call_args![self.code_data.clone(), name])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("window_get_option",
+                  &call_args![self.code_data.clone(), name])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn set_option(&self, neovim: &mut Neovim, name: &str, value: Value) -> Result<(), String> {
         neovim.session
-              .call("window_set_option",
-                    &call_args![self.code_data.clone(), name, value])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("window_set_option",
+                  &call_args![self.code_data.clone(), name, value])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_position(&self, neovim: &mut Neovim) -> Result<(u64, u64), String> {
         neovim.session
-              .call("window_get_position", &call_args![self.code_data.clone()])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("window_get_position", &call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_tabpage(&self, neovim: &mut Neovim) -> Result<Tabpage, String> {
         neovim.session
-              .call("window_get_tabpage", &call_args![self.code_data.clone()])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("window_get_tabpage", &call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn is_valid(&self, neovim: &mut Neovim) -> Result<bool, String> {
         neovim.session
-              .call("window_is_valid", &call_args![self.code_data.clone()])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("window_is_valid", &call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
 }
 
@@ -276,34 +275,34 @@ impl Tabpage {
 
     pub fn get_windows(&self, neovim: &mut Neovim) -> Result<Vec<Window>, String> {
         neovim.session
-              .call("tabpage_get_windows", &call_args![self.code_data.clone()])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("tabpage_get_windows", &call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_var(&self, neovim: &mut Neovim, name: &str) -> Result<Value, String> {
         neovim.session
-              .call("tabpage_get_var", &call_args![self.code_data.clone(), name])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("tabpage_get_var", &call_args![self.code_data.clone(), name])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn set_var(&self, neovim: &mut Neovim, name: &str, value: Value) -> Result<Value, String> {
         neovim.session
-              .call("tabpage_set_var",
-                    &call_args![self.code_data.clone(), name, value])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("tabpage_set_var",
+                  &call_args![self.code_data.clone(), name, value])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn get_window(&self, neovim: &mut Neovim) -> Result<Window, String> {
         neovim.session
-              .call("tabpage_get_window", &call_args![self.code_data.clone()])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("tabpage_get_window", &call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
     pub fn is_valid(&self, neovim: &mut Neovim) -> Result<bool, String> {
         neovim.session
-              .call("tabpage_is_valid", &call_args![self.code_data.clone()])
-              .map(map_result)
-              .map_err(map_generic_error)
+            .call("tabpage_is_valid", &call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
     }
 }
 
@@ -383,7 +382,7 @@ pub trait NeovimApi {
     fn name_to_color(&mut self, name: &str) -> Result<u64, String>;
     fn get_color_map(&mut self) -> Result<Vec<(Value, Value)>, String>;
     fn get_api_info(&mut self) -> Result<Vec<Value>, String>;
-    }
+}
 
 impl NeovimApi for Neovim {
     fn command(&mut self, str: &str) -> Result<(), String> {

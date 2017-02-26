@@ -1,4 +1,3 @@
-use rmp;
 use std;
 use std::io::{Read, Write};
 use rmp::Marker;
@@ -47,7 +46,7 @@ pub enum Value {
 }
 
 #[derive(Debug)]
-enum ReadValueError {
+pub enum ReadValueError {
     InvalidRead(ValueReadError),
     InvalidString(Utf8Error, String),
 }
@@ -70,9 +69,9 @@ impl error::Error for ReadValueError {
 
 impl Display for ReadValueError {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
-        match *self {
-            ReadValueError::InvalidRead(e) => error::Error::description(&e).fmt(f),
-            ReadValueError::InvalidString(e, s) => {
+        match self {
+            &ReadValueError::InvalidRead(ref e) => error::Error::description(e).fmt(f),
+            &ReadValueError::InvalidString(ref e, ref s) => {
                 write!(f,
                        "invalid utf-8: invalid byte near index {}, for string: '{}'",
                        e.valid_up_to(),
@@ -89,7 +88,7 @@ impl From<ValueReadError> for ReadValueError {
 }
 
 #[derive(Debug)]
-enum WriteValueError {
+pub enum WriteValueError {
     InvalidWrite(ValueWriteError),
 }
 
@@ -109,8 +108,8 @@ impl error::Error for WriteValueError {
 
 impl Display for WriteValueError {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
-        match *self {
-            WriteValueError::InvalidWrite(e) => error::Error::description(&e).fmt(f)
+        match self {
+            &WriteValueError::InvalidWrite(ref e) => error::Error::description(e).fmt(f),
         }
     }
 }
@@ -141,26 +140,26 @@ impl ::std::fmt::Display for Value {
             Value::Binary(ref val) => write!(f, "{:?}", val),
             Value::Array(ref vec) => {
                 let res = vec.iter()
-                             .map(|val| format!("{}", val))
-                             .collect::<Vec<String>>()
-                             .join(", ");
+                    .map(|val| format!("{}", val))
+                    .collect::<Vec<String>>()
+                    .join(", ");
 
                 write!(f, "[{}]", res)
             }
             Value::Map(ref vec) => {
-                try!(write!(f, "{{"));
+                write!(f, "{{")?;
 
                 match vec.iter().take(1).next() {
                     Some(&(ref k, ref v)) => {
-                        try!(write!(f, "{}: {}", k, v));
+                        write!(f, "{}: {}", k, v)?;
                     }
                     None => {
-                        try!(write!(f, ""));
+                        write!(f, "")?;
                     }
                 }
 
                 for &(ref k, ref v) in vec.iter().skip(1) {
-                    try!(write!(f, ", {}: {}", k, v));
+                    write!(f, ", {}: {}", k, v)?;
                 }
 
                 write!(f, "}}")
@@ -199,7 +198,7 @@ fn read_array<R>(rd: &mut R, len: usize) -> Result<Vec<Value>, ReadValueError>
     let mut vec = Vec::with_capacity(len);
 
     for _ in 0..len {
-        let val = try!(read_value(rd));
+        let val = read_value(rd)?;
         vec.push(val);
     }
     Ok(vec)
@@ -211,8 +210,8 @@ fn read_map<R>(rd: &mut R, len: usize) -> Result<Vec<(Value, Value)>, ReadValueE
     let mut map = Vec::with_capacity(len);
 
     for _ in 0..len {
-        let key = try!(read_value(rd));
-        let value = try!(read_value(rd));
+        let key = read_value(rd)?;
+        let value = read_value(rd)?;
 
         map.push((key, value));
     }
@@ -224,15 +223,15 @@ fn read_bin_data<R>(rd: &mut R, len: usize) -> Result<Vec<u8>, ValueReadError>
     where R: Read
 {
     let mut vec = Vec::with_capacity(len);
-    try!(rd.read_exact(&mut vec).map_err(|e| ValueReadError::InvalidDataRead(e)));
+    rd.read_exact(&mut vec).map_err(|e| ValueReadError::InvalidDataRead(e))?;
     Ok(vec)
 }
 
 fn read_ext_body<R>(rd: &mut R, len: usize) -> Result<(i8, Vec<u8>), ValueReadError>
     where R: Read
 {
-    let ty = try!(read_data_i8(rd));
-    let vec = try!(read_bin_data(rd, len));
+    let ty = read_data_i8(rd)?;
+    let vec = read_bin_data(rd, len)?;
     Ok((ty, vec))
 }
 
@@ -246,129 +245,129 @@ fn read_ext_body<R>(rd: &mut R, len: usize) -> Result<(i8, Vec<u8>), ValueReadEr
 pub fn read_value<R>(rd: &mut R) -> Result<Value, ReadValueError>
     where R: Read
 {
-    let val = match try!(read_marker(rd).map_err(|e| ValueReadError::InvalidMarkerRead(e.0))) {
+    let val = match read_marker(rd).map_err(|e| ValueReadError::InvalidMarkerRead(e.0))? {
         Marker::Null => Value::Nil,
         Marker::True => Value::Boolean(true),
         Marker::False => Value::Boolean(false),
         Marker::FixPos(val) => Value::Integer(Integer::U64(val as u64)),
         Marker::FixNeg(val) => Value::Integer(Integer::I64(val as i64)),
-        Marker::U8 => Value::Integer(Integer::U64(try!(read_data_u8(rd)) as u64)),
-        Marker::U16 => Value::Integer(Integer::U64(try!(read_data_u16(rd)) as u64)),
-        Marker::U32 => Value::Integer(Integer::U64(try!(read_data_u32(rd)) as u64)),
-        Marker::U64 => Value::Integer(Integer::U64(try!(read_data_u64(rd)))),
-        Marker::I8 => Value::Integer(Integer::I64(try!(read_data_i8(rd)) as i64)),
-        Marker::I16 => Value::Integer(Integer::I64(try!(read_data_i16(rd)) as i64)),
-        Marker::I32 => Value::Integer(Integer::I64(try!(read_data_i32(rd)) as i64)),
-        Marker::I64 => Value::Integer(Integer::I64(try!(read_data_i64(rd)))),
-        Marker::F32 => Value::Float(Float::F32(try!(read_data_f32(rd)))),
-        Marker::F64 => Value::Float(Float::F64(try!(read_data_f64(rd)))),
+        Marker::U8 => Value::Integer(Integer::U64(read_data_u8(rd)? as u64)),
+        Marker::U16 => Value::Integer(Integer::U64(read_data_u16(rd)? as u64)),
+        Marker::U32 => Value::Integer(Integer::U64(read_data_u32(rd)? as u64)),
+        Marker::U64 => Value::Integer(Integer::U64(read_data_u64(rd)?)),
+        Marker::I8 => Value::Integer(Integer::I64(read_data_i8(rd)? as i64)),
+        Marker::I16 => Value::Integer(Integer::I64(read_data_i16(rd)? as i64)),
+        Marker::I32 => Value::Integer(Integer::I64(read_data_i32(rd)? as i64)),
+        Marker::I64 => Value::Integer(Integer::I64(read_data_i64(rd)?)),
+        Marker::F32 => Value::Float(Float::F32(read_data_f32(rd)?)),
+        Marker::F64 => Value::Float(Float::F64(read_data_f64(rd)?)),
         Marker::FixStr(len) => {
             let len = len as usize;
-            let mut res: Vec<u8> = Vec::with_capacity(len);
-            let res = try!(read_str_data(rd, len, &mut res)).to_owned();
+            let mut res = vec![0; len];
+            let res = read_str_data(rd, len, &mut res)?.to_owned();
             Value::String(res)
         }
         Marker::Str8 => {
-            let len = try!(read_data_u8(rd)) as usize;
-            let mut res: Vec<u8> = Vec::with_capacity(len);
-            let res = try!(read_str_data(rd, len, &mut res)).to_owned();
+            let len = read_data_u8(rd)? as usize;
+            let mut res = vec![0; len];
+            let res = read_str_data(rd, len, &mut res)?.to_owned();
             Value::String(res)
         }
         Marker::Str16 => {
-            let len = try!(read_data_u16(rd)) as usize;
-            let mut res: Vec<u8> = Vec::with_capacity(len);
-            let res = try!(read_str_data(rd, len, &mut res)).to_owned();
+            let len = read_data_u16(rd)? as usize;
+            let mut res = vec![0; len];
+            let res = read_str_data(rd, len, &mut res)?.to_owned();
             Value::String(res)
         }
         Marker::Str32 => {
-            let len = try!(read_data_u32(rd)) as usize;
-            let mut res: Vec<u8> = Vec::with_capacity(len);
-            let res = try!(read_str_data(rd, len, &mut res)).to_owned();
+            let len = read_data_u32(rd)? as usize;
+            let mut res = vec![0; len];
+            let res = read_str_data(rd, len, &mut res)?.to_owned();
             Value::String(res)
         }
         Marker::FixArray(len) => {
             let len = len as usize;
-            let vec = try!(read_array(rd, len));
+            let vec = read_array(rd, len)?;
             Value::Array(vec)
         }
         Marker::Array16 => {
-            let len = try!(read_data_u16(rd)) as usize;
-            let vec = try!(read_array(rd, len));
+            let len = read_data_u16(rd)? as usize;
+            let vec = read_array(rd, len)?;
             Value::Array(vec)
         }
         Marker::Array32 => {
-            let len = try!(read_data_u32(rd)) as usize;
-            let vec = try!(read_array(rd, len));
+            let len = read_data_u32(rd)? as usize;
+            let vec = read_array(rd, len)?;
             Value::Array(vec)
         }
         Marker::FixMap(len) => {
             let len = len as usize;
-            let map = try!(read_map(rd, len));
+            let map = read_map(rd, len)?;
             Value::Map(map)
         }
         Marker::Map16 => {
-            let len = try!(read_data_u16(rd)) as usize;
-            let map = try!(read_map(rd, len));
+            let len = read_data_u16(rd)? as usize;
+            let map = read_map(rd, len)?;
             Value::Map(map)
         }
         Marker::Map32 => {
-            let len = try!(read_data_u32(rd)) as usize;
-            let map = try!(read_map(rd, len));
+            let len = read_data_u32(rd)? as usize;
+            let map = read_map(rd, len)?;
             Value::Map(map)
         }
         Marker::Bin8 => {
-            let len = try!(read_data_u8(rd)) as usize;
-            let vec = try!(read_bin_data(rd, len));
+            let len = read_data_u8(rd)? as usize;
+            let vec = read_bin_data(rd, len)?;
             Value::Binary(vec)
         }
         Marker::Bin16 => {
-            let len = try!(read_data_u16(rd)) as usize;
-            let vec = try!(read_bin_data(rd, len));
+            let len = read_data_u16(rd)? as usize;
+            let vec = read_bin_data(rd, len)?;
             Value::Binary(vec)
         }
         Marker::Bin32 => {
-            let len = try!(read_data_u32(rd)) as usize;
-            let vec = try!(read_bin_data(rd, len));
+            let len = read_data_u32(rd)? as usize;
+            let vec = read_bin_data(rd, len)?;
             Value::Binary(vec)
         }
         Marker::FixExt1 => {
             let len = 1 as usize;
-            let (ty, vec) = try!(read_ext_body(rd, len));
+            let (ty, vec) = read_ext_body(rd, len)?;
             Value::Ext(ty, vec)
         }
         Marker::FixExt2 => {
             let len = 2 as usize;
-            let (ty, vec) = try!(read_ext_body(rd, len));
+            let (ty, vec) = read_ext_body(rd, len)?;
             Value::Ext(ty, vec)
         }
         Marker::FixExt4 => {
             let len = 4 as usize;
-            let (ty, vec) = try!(read_ext_body(rd, len));
+            let (ty, vec) = read_ext_body(rd, len)?;
             Value::Ext(ty, vec)
         }
         Marker::FixExt8 => {
             let len = 8 as usize;
-            let (ty, vec) = try!(read_ext_body(rd, len));
+            let (ty, vec) = read_ext_body(rd, len)?;
             Value::Ext(ty, vec)
         }
         Marker::FixExt16 => {
             let len = 16 as usize;
-            let (ty, vec) = try!(read_ext_body(rd, len));
+            let (ty, vec) = read_ext_body(rd, len)?;
             Value::Ext(ty, vec)
         }
         Marker::Ext8 => {
-            let len = try!(read_data_u8(rd)) as usize;
-            let (ty, vec) = try!(read_ext_body(rd, len));
+            let len = read_data_u8(rd)? as usize;
+            let (ty, vec) = read_ext_body(rd, len)?;
             Value::Ext(ty, vec)
         }
         Marker::Ext16 => {
-            let len = try!(read_data_u16(rd)) as usize;
-            let (ty, vec) = try!(read_ext_body(rd, len));
+            let len = read_data_u16(rd)? as usize;
+            let (ty, vec) = read_ext_body(rd, len)?;
             Value::Ext(ty, vec)
         }
         Marker::Ext32 => {
-            let len = try!(read_data_u32(rd)) as usize;
-            let (ty, vec) = try!(read_ext_body(rd, len));
+            let len = read_data_u32(rd)? as usize;
+            let (ty, vec) = read_ext_body(rd, len)?;
             Value::Ext(ty, vec)
         }
         Marker::Reserved => {
@@ -389,40 +388,55 @@ pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), WriteValueError>
     where W: Write
 {
     match val {
-        &Value::Nil => try!(write_nil(wr)),
-        &Value::Boolean(val) => try!(write_bool(wr, val)),
+        &Value::Nil => write_nil(wr)?,
+        &Value::Boolean(val) => write_bool(wr, val)?,
         &Value::Integer(Integer::U64(val)) => {
-            try!(write_uint(wr, val));
+            write_uint(wr, val)?;
         }
         &Value::Integer(Integer::I64(val)) => {
-            try!(write_sint(wr, val));
+            write_sint(wr, val)?;
         }
-        &Value::Float(Float::F32(val)) => try!(write_f32(wr, val)),
-        &Value::Float(Float::F64(val)) => try!(write_f64(wr, val)),
+        &Value::Float(Float::F32(val)) => write_f32(wr, val)?,
+        &Value::Float(Float::F64(val)) => write_f64(wr, val)?,
         &Value::String(ref val) => {
-            try!(write_str(wr, &val));
+            write_str(wr, &val)?;
         }
         &Value::Binary(ref val) => {
-            try!(write_bin(wr, &val));
+            write_bin(wr, &val)?;
         }
         &Value::Array(ref val) => {
-            try!(write_array_len(wr, val.len() as u32));
+            write_array_len(wr, val.len() as u32)?;
             for item in val {
-                try!(write_value(wr, item));
+                write_value(wr, item)?;
             }
         }
         &Value::Map(ref val) => {
-            try!(write_map_len(wr, val.len() as u32));
+            write_map_len(wr, val.len() as u32)?;
             for &(ref key, ref val) in val {
-                try!(write_value(wr, key));
-                try!(write_value(wr, val));
+                write_value(wr, key)?;
+                write_value(wr, val)?;
             }
         }
         &Value::Ext(ty, ref data) => {
-            try!(write_ext_meta(wr, data.len() as u32, ty));
-            try!(wr.write_all(data));
+            write_ext_meta(wr, data.len() as u32, ty)?;
+            wr.write_all(data)?;
         }
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::BufReader;
+
+    #[test]
+    fn test_string() {
+        let mut buf = Vec::new();
+        write_value(&mut buf, &Value::String("test1".to_owned())).unwrap();
+        let mut reader = BufReader::new(buf.as_slice());
+        let val = read_value(&mut reader).unwrap();
+        assert_eq!(Value::String("test1".to_owned()), val);
+    }
 }

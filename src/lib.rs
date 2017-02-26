@@ -4,7 +4,7 @@
 //! # Examples
 //! ```no_run
 //! use neovim_lib::{Neovim, NeovimApi, Session};
-//! 
+//!
 //! let mut session = Session::new_tcp("127.0.0.1:6666").unwrap();
 //! session.start_event_loop();
 //! let mut nvim = Neovim::new(session);

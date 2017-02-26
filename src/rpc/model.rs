@@ -16,10 +16,7 @@ pub enum RpcMessage {
         error: Value,
         result: Value,
     }, // 1
-    RpcNotification {
-        method: String,
-        params: Vec<Value>,
-    }, // 2
+    RpcNotification { method: String, params: Vec<Value> }, // 2
 }
 
 macro_rules! try_str {
@@ -54,7 +51,7 @@ macro_rules! rpc_args {
 }
 
 pub fn decode<R: Read>(reader: &mut R) -> Result<RpcMessage, Box<Error>> {
-    let arr = try_arr!(try!(read_value(reader)), "Rpc message must be array");
+    let arr = try_arr!(read_value(reader)?, "Rpc message must be array");
     match try_int!(arr[0], "Can't find message type") {
         0 => {
             let msgid = try_int!(arr[1], "msgid not found");
@@ -89,17 +86,17 @@ pub fn decode<R: Read>(reader: &mut R) -> Result<RpcMessage, Box<Error>> {
 
 pub fn encode<W: Write>(writer: &mut W, msg: &RpcMessage) -> Result<(), Box<Error>> {
     match msg {
-        &RpcMessage::RpcRequest{msgid, ref method, ref params} => {
+        &RpcMessage::RpcRequest { msgid, ref method, ref params } => {
             let val = rpc_args!(0, msgid, method.to_owned(), params.to_owned());
-            try!(write_value(writer, &val));
+            write_value(writer, &val)?;
         }
-        &RpcMessage::RpcResponse{msgid, ref error, ref result} => {
+        &RpcMessage::RpcResponse { msgid, ref error, ref result } => {
             let val = rpc_args!(1, msgid, error.to_owned(), result.to_owned());
-            try!(write_value(writer, &val));
+            write_value(writer, &val)?;
         }
-        &RpcMessage::RpcNotification{ref method, ref params} => {
+        &RpcMessage::RpcNotification { ref method, ref params } => {
             let val = rpc_args!(2, method.to_owned(), params.to_owned());
-            try!(write_value(writer, &val));
+            write_value(writer, &val)?;
         }
     };
     Ok(())
@@ -134,8 +131,8 @@ impl<T: FromVal<Value>> FromVal<Value> for Vec<T> {
     fn from_val(val: Value) -> Self {
         if let Value::Array(arr) = val {
             return arr.iter()
-                      .map(|v| T::from_val(v.clone()))
-                      .collect();
+                .map(|v| T::from_val(v.clone()))
+                .collect();
         }
         panic!("Can't convert to string");
     }
