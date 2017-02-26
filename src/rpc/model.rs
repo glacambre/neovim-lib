@@ -1,8 +1,5 @@
 
-use rmp::encode::value::write_value;
-use super::value::read_value;
-use super::value::Value;
-use super::value::Integer;
+use super::value::{read_value, write_value, Value, Integer};
 use std::io;
 use std::io::{Read, Write};
 use std::error::Error;

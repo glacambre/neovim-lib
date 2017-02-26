@@ -1,7 +1,9 @@
 use rmp;
-use std::io::Read;
+use std;
+use std::io::{Read, Write};
 use rmp::Marker;
 use rmp::decode::*;
+use rmp::encode::*;
 use std::str::{Utf8Error, from_utf8};
 use std::error;
 use std::fmt;
@@ -86,6 +88,45 @@ impl From<ValueReadError> for ReadValueError {
     }
 }
 
+#[derive(Debug)]
+enum WriteValueError {
+    InvalidWrite(ValueWriteError),
+}
+
+impl error::Error for WriteValueError {
+    fn description(&self) -> &str {
+        match *self {
+            WriteValueError::InvalidWrite(..) => "failed to write MessagePack data",
+        }
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            WriteValueError::InvalidWrite(ref err) => Some(err),
+        }
+    }
+}
+
+impl Display for WriteValueError {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+        match *self {
+            WriteValueError::InvalidWrite(e) => error::Error::description(&e).fmt(f)
+        }
+    }
+}
+
+impl From<ValueWriteError> for WriteValueError {
+    fn from(e: ValueWriteError) -> Self {
+        WriteValueError::InvalidWrite(e)
+    }
+}
+
+impl From<std::io::Error> for WriteValueError {
+    fn from(e: std::io::Error) -> Self {
+        WriteValueError::InvalidWrite(ValueWriteError::InvalidDataWrite(e))
+    }
+}
+
 /// Implements human-readable value formatting.
 impl ::std::fmt::Display for Value {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
@@ -142,7 +183,10 @@ fn read_str_data<'r, R>(rd: &mut R,
         Ok(()) => {
             match from_utf8(buf) {
                 Ok(decoded) => Ok(decoded),
-                Err(err) => Err(ReadValueError::InvalidString(err, (*String::from_utf8_lossy(buf)).to_owned())),
+                Err(err) => {
+                    Err(ReadValueError::InvalidString(err,
+                                                      (*String::from_utf8_lossy(buf)).to_owned()))
+                }
             }
         }
         Err(err) => Err(ReadValueError::InvalidRead(ValueReadError::InvalidDataRead(err))),
@@ -327,8 +371,58 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, ReadValueError>
             let (ty, vec) = try!(read_ext_body(rd, len));
             Value::Ext(ty, vec)
         }
-        Marker::Reserved => return Err(ReadValueError::InvalidRead(ValueReadError::TypeMismatch(Marker::Reserved))),
+        Marker::Reserved => {
+            return Err(ReadValueError::InvalidRead(ValueReadError::TypeMismatch(Marker::Reserved)))
+        }
     };
 
     Ok(val)
+}
+
+/// Encodes and attempts to write the most efficient representation of the given Value.
+///
+/// # Note
+///
+/// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
+/// operation is retried.
+pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), WriteValueError>
+    where W: Write
+{
+    match val {
+        &Value::Nil => try!(write_nil(wr)),
+        &Value::Boolean(val) => try!(write_bool(wr, val)),
+        &Value::Integer(Integer::U64(val)) => {
+            try!(write_uint(wr, val));
+        }
+        &Value::Integer(Integer::I64(val)) => {
+            try!(write_sint(wr, val));
+        }
+        &Value::Float(Float::F32(val)) => try!(write_f32(wr, val)),
+        &Value::Float(Float::F64(val)) => try!(write_f64(wr, val)),
+        &Value::String(ref val) => {
+            try!(write_str(wr, &val));
+        }
+        &Value::Binary(ref val) => {
+            try!(write_bin(wr, &val));
+        }
+        &Value::Array(ref val) => {
+            try!(write_array_len(wr, val.len() as u32));
+            for item in val {
+                try!(write_value(wr, item));
+            }
+        }
+        &Value::Map(ref val) => {
+            try!(write_map_len(wr, val.len() as u32));
+            for &(ref key, ref val) in val {
+                try!(write_value(wr, key));
+                try!(write_value(wr, val));
+            }
+        }
+        &Value::Ext(ty, ref data) => {
+            try!(write_ext_meta(wr, data.len() as u32, ty));
+            try!(wr.write_all(data));
+        }
+    }
+
+    Ok(())
 }
