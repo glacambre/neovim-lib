@@ -3,6 +3,9 @@ use std::io::Read;
 use rmp::Marker;
 use rmp::decode::*;
 use std::str::{Utf8Error, from_utf8};
+use std::error;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Integer {
@@ -39,6 +42,48 @@ pub enum Value {
     /// Extended implements Extension interface: represents a tuple of type information and a byte
     /// array where type information is an integer whose meaning is defined by applications.
     Ext(i8, Vec<u8>),
+}
+
+#[derive(Debug)]
+enum ReadValueError {
+    InvalidRead(ValueReadError),
+    InvalidString(Utf8Error, String),
+}
+
+impl error::Error for ReadValueError {
+    fn description(&self) -> &str {
+        match *self {
+            ReadValueError::InvalidRead(..) => "failed to read MessagePack data",
+            ReadValueError::InvalidString(..) => "failed to parse utf8 string",
+        }
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            ReadValueError::InvalidRead(ref err) => Some(err),
+            ReadValueError::InvalidString(..) => None,
+        }
+    }
+}
+
+impl Display for ReadValueError {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+        match *self {
+            ReadValueError::InvalidRead(e) => error::Error::description(&e).fmt(f),
+            ReadValueError::InvalidString(e, s) => {
+                write!(f,
+                       "invalid utf-8: invalid byte near index {}, for string: '{}'",
+                       e.valid_up_to(),
+                       s)
+            }
+        }
+    }
+}
+
+impl From<ValueReadError> for ReadValueError {
+    fn from(e: ValueReadError) -> Self {
+        ReadValueError::InvalidRead(e)
+    }
 }
 
 /// Implements human-readable value formatting.
@@ -87,7 +132,7 @@ impl ::std::fmt::Display for Value {
 fn read_str_data<'r, R>(rd: &mut R,
                         len: usize,
                         buf: &'r mut [u8])
-                        -> Result<&'r str, DecodeStringError<'r>>
+                        -> Result<&'r str, ReadValueError>
     where R: Read
 {
     debug_assert_eq!(len, buf.len());
@@ -97,14 +142,14 @@ fn read_str_data<'r, R>(rd: &mut R,
         Ok(()) => {
             match from_utf8(buf) {
                 Ok(decoded) => Ok(decoded),
-                Err(err) => Err(DecodeStringError::InvalidUtf8(buf, err)),
+                Err(err) => Err(ReadValueError::InvalidString(err, (*String::from_utf8_lossy(buf)).to_owned())),
             }
         }
-        Err(err) => Err(DecodeStringError::InvalidDataRead(From::from(err))),
+        Err(err) => Err(ReadValueError::InvalidRead(ValueReadError::InvalidDataRead(err))),
     }
 }
 
-fn read_array<R>(rd: &mut R, len: usize) -> Result<Vec<Value>, ValueReadError>
+fn read_array<R>(rd: &mut R, len: usize) -> Result<Vec<Value>, ReadValueError>
     where R: Read
 {
     let mut vec = Vec::with_capacity(len);
@@ -116,7 +161,7 @@ fn read_array<R>(rd: &mut R, len: usize) -> Result<Vec<Value>, ValueReadError>
     Ok(vec)
 }
 
-fn read_map<R>(rd: &mut R, len: usize) -> Result<Vec<(Value, Value)>, ValueReadError>
+fn read_map<R>(rd: &mut R, len: usize) -> Result<Vec<(Value, Value)>, ReadValueError>
     where R: Read
 {
     let mut map = Vec::with_capacity(len);
@@ -154,10 +199,10 @@ fn read_ext_body<R>(rd: &mut R, len: usize) -> Result<(i8, Vec<u8>), ValueReadEr
 /// This function will return `Error` on any I/O error while either reading or decoding a `Value`.
 /// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
 /// operation is retried.
-pub fn read_value<R>(rd: &mut R) -> Result<Value, ValueReadError>
+pub fn read_value<R>(rd: &mut R) -> Result<Value, ReadValueError>
     where R: Read
 {
-    let val = match try!(read_marker(rd)) {
+    let val = match try!(read_marker(rd).map_err(|e| ValueReadError::InvalidMarkerRead(e.0))) {
         Marker::Null => Value::Nil,
         Marker::True => Value::Boolean(true),
         Marker::False => Value::Boolean(false),
@@ -282,7 +327,7 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, ValueReadError>
             let (ty, vec) = try!(read_ext_body(rd, len));
             Value::Ext(ty, vec)
         }
-        Marker::Reserved => return Err(ValueReadError::InvalidMarkerRead(Marker::Reserved)),
+        Marker::Reserved => return Err(ReadValueError::InvalidRead(ValueReadError::TypeMismatch(Marker::Reserved))),
     };
 
     Ok(val)

@@ -1,7 +1,7 @@
 
 pub mod model;
+pub mod value;
 mod client;
-mod value;
 
 pub use self::model::IntoVal;
 pub use self::model::FromVal;
