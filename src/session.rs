@@ -7,7 +7,7 @@ use std::process::{Command, Child, ChildStdin, ChildStdout};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
-use rmp::Value;
+use rpc::value::Value;
 
 use rpc::Client;
 
@@ -31,8 +31,8 @@ macro_rules! call_args {
 impl Session {
     /// Connect to nvim instance via tcp
     pub fn new_tcp(addr: &str) -> Result<Session> {
-        let stream = try!(TcpStream::connect(addr));
-        let read = try!(stream.try_clone());
+        let stream = TcpStream::connect(addr)?;
+        let read = stream.try_clone()?;
         Ok(Session {
             client: ClientConnection::Tcp(Client::new(stream, read)),
             timeout: Some(Duration::new(5, 0)),
@@ -50,17 +50,16 @@ impl Session {
 
     /// Connect to a Neovim instance by spawning a new one
     pub fn new_child_path(program: &str) -> Result<Session> {
-        let mut child = try!(Command::new(program)
-                                 .arg("--embed")
-                                 .stdin(Stdio::piped())
-                                 .stdout(Stdio::piped())
-                                 .spawn());
-        let stdout = try!(child.stdout
-                               .take()
-                               .ok_or_else(|| Error::new(ErrorKind::Other, "Can't open stdout")));
-        let stdin = try!(child.stdin
-                              .take()
-                              .ok_or_else(|| Error::new(ErrorKind::Other, "Can't open stdin")));
+        let mut child = Command::new(program).arg("--embed")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()?;
+        let stdout = child.stdout
+            .take()
+            .ok_or_else(|| Error::new(ErrorKind::Other, "Can't open stdout"))?;
+        let stdin = child.stdin
+            .take()
+            .ok_or_else(|| Error::new(ErrorKind::Other, "Can't open stdin"))?;
 
         Ok(Session {
             client: ClientConnection::Child(Client::new(stdout, stdin), child),

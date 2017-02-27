@@ -1,6 +1,6 @@
 use session::Session;
 use rpc::*;
-use rmp::Value;
+use rpc::value::Value;
 use neovim_api::NeovimApi;
 
 pub struct Neovim {

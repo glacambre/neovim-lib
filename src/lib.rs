@@ -4,7 +4,7 @@
 //! # Examples
 //! ```no_run
 //! use neovim_lib::{Neovim, NeovimApi, Session};
-//! 
+//!
 //! let mut session = Session::new_tcp("127.0.0.1:6666").unwrap();
 //! session.start_event_loop();
 //! let mut nvim = Neovim::new(session);
@@ -16,8 +16,6 @@
 //! windows[0].set_width(&mut nvim, 10).unwrap();
 //! ```
 extern crate rmp;
-extern crate rmp_serialize;
-extern crate rustc_serialize;
 #[macro_use]
 extern crate log;
 
@@ -30,3 +28,5 @@ pub mod neovim_api;
 pub use neovim::Neovim;
 pub use neovim_api::NeovimApi;
 pub use session::Session;
+
+pub use rpc::value::{Value, Integer, Float};

@@ -41,4 +41,3 @@ fn edit_test() {
     let windows = nvim.get_windows().unwrap();
     windows[0].set_width(&mut nvim, 10).unwrap();
 }
-
