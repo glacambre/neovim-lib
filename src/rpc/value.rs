@@ -1,3 +1,5 @@
+// this code is partly copied from rmp project and modifed
+//
 use std;
 use std::io::{Read, Write};
 use rmp::Marker;
@@ -237,11 +239,6 @@ fn read_ext_body<R>(rd: &mut R, len: usize) -> Result<(i8, Vec<u8>), ValueReadEr
 
 /// Attempts to read bytes from the given reader and interpret them as a `Value`.
 ///
-/// # Errors
-///
-/// This function will return `Error` on any I/O error while either reading or decoding a `Value`.
-/// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
-/// operation is retried.
 pub fn read_value<R>(rd: &mut R) -> Result<Value, ReadValueError>
     where R: Read
 {
@@ -380,10 +377,6 @@ pub fn read_value<R>(rd: &mut R) -> Result<Value, ReadValueError>
 
 /// Encodes and attempts to write the most efficient representation of the given Value.
 ///
-/// # Note
-///
-/// All instances of `ErrorKind::Interrupted` are handled by this function and the underlying
-/// operation is retried.
 pub fn write_value<W>(wr: &mut W, val: &Value) -> Result<(), WriteValueError>
     where W: Write
 {
