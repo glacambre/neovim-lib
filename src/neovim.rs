@@ -9,6 +9,32 @@ pub struct Neovim {
     pub session: Session,
 }
 
+pub struct Options {
+    rgb: bool,
+    popupmenu_external: bool,
+}
+
+impl Options {
+    pub fn new() -> Options {
+        Options { 
+            rgb: true,
+            popupmenu_external: false,
+        }
+    }
+
+    pub fn set_rgb(&mut self, rgb: bool) {
+        self.rgb = rgb;
+    }
+
+    pub fn set_popupmenu_external(&mut self, popupmenu_external: bool) {
+        self.popupmenu_external = popupmenu_external;
+    }
+
+    fn to_value_map(&self) -> Value {
+        Value::Map(vec![(Value::String("rgb".to_owned()), Value::Boolean(self.rgb)), (Value::String("popupmenu_external".to_owned()), Value::Boolean(self.popupmenu_external))])
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum CallError {
     GenericError(String),
@@ -67,9 +93,9 @@ impl Neovim {
     /// Register as a remote UI.
     ///
     /// After this method is called, the client will receive redraw notifications.
-    pub fn ui_attach(&mut self, width: u64, height: u64, rgb: bool) -> Result<(), CallError> {
+    pub fn ui_attach(&mut self, width: u64, height: u64, opts: &Options) -> Result<(), CallError>  {
         self.session
-            .call("ui_attach", &call_args!(width, height, rgb))
+            .call("ui_attach", &call_args!(width, height, opts.to_value_map()))
             .map_err(map_generic_error)
             .map(|_| ())
     }
