@@ -9,14 +9,14 @@ pub struct Neovim {
     pub session: Session,
 }
 
-pub struct Options {
+pub struct UiAttachOptions {
     rgb: bool,
     popupmenu_external: bool,
 }
 
-impl Options {
-    pub fn new() -> Options {
-        Options { 
+impl UiAttachOptions {
+    pub fn new() -> UiAttachOptions {
+        UiAttachOptions { 
             rgb: true,
             popupmenu_external: false,
         }
@@ -93,9 +93,9 @@ impl Neovim {
     /// Register as a remote UI.
     ///
     /// After this method is called, the client will receive redraw notifications.
-    pub fn ui_attach(&mut self, width: u64, height: u64, opts: &Options) -> Result<(), CallError>  {
+    pub fn ui_attach(&mut self, width: u64, height: u64, opts: UiAttachOptions) -> Result<(), CallError>  {
         self.session
-            .call("ui_attach", &call_args!(width, height, opts.to_value_map()))
+            .call("nvim_ui_attach", &call_args!(width, height, opts.to_value_map()))
             .map_err(map_generic_error)
             .map(|_| ())
     }

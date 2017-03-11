@@ -25,7 +25,7 @@ pub mod session;
 pub mod neovim;
 pub mod neovim_api;
 
-pub use neovim::Neovim;
+pub use neovim::{Neovim, UiAttachOptions, CallError};
 pub use neovim_api::NeovimApi;
 pub use session::Session;
 
