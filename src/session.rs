@@ -8,6 +8,8 @@ use std::thread::JoinHandle;
 use std::time::Duration;
 
 #[cfg(unix)]
+use std::path::Path;
+#[cfg(unix)]
 use unix_socket::UnixStream;
 
 use rpc::value::Value;
@@ -44,7 +46,7 @@ impl Session {
 
     #[cfg(unix)]
     /// Connect to nvim instance via unix socket
-    pub fn new_unix_socket(path: &str) -> Result<Session> {
+    pub fn new_unix_socket<P: AsRef<Path>>(path: P) -> Result<Session> {
         let stream = try!(UnixStream::connect(path));
         let read = try!(stream.try_clone());
         Ok(Session {
