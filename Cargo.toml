@@ -17,3 +17,9 @@ travis-ci = { repository = "https://github.com/daa84/neovim-lib", branch = "mast
 [dependencies]
 rmp = "0.8"
 log = "0.3"
+
+[target.'cfg(unix)'.dependencies]
+unix_socket = "0.5.0"
+
+[dev-dependencies]
+tempdir = "0.3"
