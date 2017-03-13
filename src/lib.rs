@@ -18,6 +18,8 @@
 extern crate rmp;
 #[macro_use]
 extern crate log;
+
+#[cfg(unix)]
 extern crate unix_socket;
 
 mod rpc;
