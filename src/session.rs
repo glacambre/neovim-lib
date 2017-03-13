@@ -47,8 +47,8 @@ impl Session {
     #[cfg(unix)]
     /// Connect to nvim instance via unix socket
     pub fn new_unix_socket<P: AsRef<Path>>(path: P) -> Result<Session> {
-        let stream = try!(UnixStream::connect(path));
-        let read = try!(stream.try_clone());
+        let stream = UnixStream::connect(path)?;
+        let read = stream.try_clone()?;
         Ok(Session {
             client: ClientConnection::UnixSocket(Client::new(stream, read)),
             timeout: Some(Duration::new(5, 0)),
