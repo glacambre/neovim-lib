@@ -1,7 +1,7 @@
 use std::result;
 use std::net::TcpStream;
 use std::io::Result;
-use std::io::{Error, ErrorKind};
+use std::io::{Error, ErrorKind, Stdin, Stdout};
 use std::process::Stdio;
 use std::process::{Command, Child, ChildStdin, ChildStdout};
 use std::thread::JoinHandle;
@@ -84,6 +84,16 @@ impl Session {
         })
     }
 
+    /// Connect to a Neovim instance that spawned this process over stdin/stdout.
+    pub fn new_parent() -> Result<Session> {
+        use std::io;
+
+        Ok(Session {
+            client: ClientConnection::Parent(Client::new(io::stdin(), io::stdout())),
+            timeout: Some(Duration::new(5, 0)),
+        })
+    }
+
     /// Set call timeout
     pub fn set_timeout(&mut self, timeout: Duration) {
         self.timeout = Some(timeout);
@@ -99,6 +109,7 @@ impl Session {
     {
         match self.client {
             ClientConnection::Child(ref mut client, _) => client.start_event_loop_handler(handler),
+            ClientConnection::Parent(ref mut client) => client.start_event_loop_handler(handler),
             ClientConnection::Tcp(ref mut client) => client.start_event_loop_handler(handler),
 
             #[cfg(unix)]
@@ -112,6 +123,7 @@ impl Session {
     pub fn start_event_loop(&mut self) {
         match self.client {
             ClientConnection::Child(ref mut client, _) => client.start_event_loop(),
+            ClientConnection::Parent(ref mut client) => client.start_event_loop(),
             ClientConnection::Tcp(ref mut client) => client.start_event_loop(),
 
             #[cfg(unix)]
@@ -123,6 +135,7 @@ impl Session {
     pub fn call(&mut self, method: &str, args: &Vec<Value>) -> result::Result<Value, Value> {
         match self.client {
             ClientConnection::Child(ref mut client, _) => client.call(method, args, self.timeout),
+            ClientConnection::Parent(ref mut client) => client.call(method, args, self.timeout),
             ClientConnection::Tcp(ref mut client) => client.call(method, args, self.timeout),
 
             #[cfg(unix)]
@@ -136,6 +149,7 @@ impl Session {
     pub fn take_dispatch_guard(&mut self) -> JoinHandle<()> {
         match self.client {
             ClientConnection::Child(ref mut client, _) => client.take_dispatch_guard(),
+            ClientConnection::Parent(ref mut client) => client.take_dispatch_guard(),
             ClientConnection::Tcp(ref mut client) => client.take_dispatch_guard(),
 
             #[cfg(unix)]
@@ -146,6 +160,7 @@ impl Session {
 
 enum ClientConnection {
     Child(Client<ChildStdout, ChildStdin>, Child),
+    Parent(Client<Stdin, Stdout>),
     Tcp(Client<TcpStream, TcpStream>),
 
     #[cfg(unix)]
