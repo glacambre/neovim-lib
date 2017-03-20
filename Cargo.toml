@@ -1,10 +1,10 @@
 [package]
 name = "neovim-lib"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["daa84 <daa84@inbox.ru>"]
 license = "LGPL-3.0"
 description = "msgpack-rpc neovim client"
-documentation = "http://daa84.github.io/neovim-lib/neovim_lib/index.html"
+documentation = "https://docs.rs/neovim-lib"
 repository = "https://github.com/daa84/neovim-lib"
 readme = "README.md"
 categories = ["api-bindings"]
