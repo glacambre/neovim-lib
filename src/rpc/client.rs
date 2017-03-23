@@ -1,7 +1,7 @@
 use std::io::{Read, Write};
 use std::thread;
 use std::thread::JoinHandle;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use std::collections::HashMap;
 use std::sync::{mpsc, Mutex, Arc};
 
@@ -71,16 +71,16 @@ impl<R, W> Client<R, W>
             return Err(Value::from("Event loop not started"));
         }
 
-        let mut wait_time = dur.as_secs() * 1_000_000_000 + dur.subsec_nanos() as u64;
+        let instant = Instant::now();
+        let delay = Duration::from_millis(1);
 
         let receiver = self.send_msg(method, args);
 
         loop {
             match receiver.try_recv() {
                 Err(mpsc::TryRecvError::Empty) => {
-                    thread::sleep(Duration::new(0, 1000_000));
-                    wait_time -= 1000_000;
-                    if wait_time <= 0 {
+                    thread::sleep(delay);
+                    if instant.elapsed() >= dur {
                         return Err(Value::from("Wait timeout"));
                     }
                 }
