@@ -99,6 +99,9 @@ pub fn encode<W: Write>(writer: &mut W, msg: &RpcMessage) -> Result<(), Box<Erro
             write_value(writer, &val)?;
         }
     };
+
+    writer.flush()?;
+
     Ok(())
 }
 
