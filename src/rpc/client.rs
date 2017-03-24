@@ -32,11 +32,13 @@ impl<R, W> Client<R, W>
         self.dispatch_guard.take().expect("Can only take join handle after running event loop")
     }
 
-    pub fn start_event_loop_cb<F: FnMut(&str, Vec<Value>) + Send + 'static>(&mut self, cb: F) {
+    pub fn start_event_loop_handler<H>(&mut self, handler: H)
+        where H: Handler + Send + 'static
+    {
         self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(),
                                                          self.reader.take().unwrap(),
                                                          self.writer.clone(),
-                                                         cb));
+                                                         handler));
         self.event_loop_started = true;
     }
 
@@ -44,7 +46,7 @@ impl<R, W> Client<R, W>
         self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(),
                                                          self.reader.take().unwrap(),
                                                          self.writer.clone(),
-                                                         |_, _| ()));
+                                                         DefaultHandler()));
         self.event_loop_started = true;
     }
 
@@ -133,11 +135,13 @@ impl<R, W> Client<R, W>
         receiver.recv().unwrap()
     }
 
-    fn dispatch_thread<F: FnMut(&str, Vec<Value>) + Send + 'static>(queue: Queue,
-                                                                    mut reader: R,
-                                                                    writer: Arc<Mutex<W>>,
-                                                                    mut cb: F)
-                                                                    -> JoinHandle<()> {
+    fn dispatch_thread<H>(queue: Queue,
+                          mut reader: R,
+                          writer: Arc<Mutex<W>>,
+                          mut handler: H)
+                          -> JoinHandle<()>
+        where H: Handler + Send + 'static
+    {
         thread::spawn(move || loop {
             let msg = match model::decode(&mut reader) {
                 Ok(msg) => msg,
@@ -156,7 +160,7 @@ impl<R, W> Client<R, W>
                     sender.send(Ok(result)).unwrap();
                 }
                 model::RpcMessage::RpcNotification { method, params } => {
-                    cb(&method, params);
+                    handler.handle_notify(&method, params);
                 }
                 _ => println!("Unknown type"),
             };
