@@ -5,35 +5,46 @@ use std::time::Duration;
 use std::collections::HashMap;
 use std::sync::{mpsc, Mutex, Arc};
 
+use super::handler::{DefaultHandler, Handler};
 use super::value::Value;
 
 use super::model;
 
 type Queue = Arc<Mutex<HashMap<u64, mpsc::Sender<Result<Value, Value>>>>>;
 
-pub struct Client<R: Read + Send + 'static, W: Write> {
+pub struct Client<R, W>
+    where R: Read + Send + 'static,
+          W: Write + Send + 'static
+{
     reader: Option<R>,
-    writer: W,
+    writer: Arc<Mutex<W>>,
     dispatch_guard: Option<JoinHandle<()>>,
     event_loop_started: bool,
     queue: Queue,
     msgid_counter: u64,
 }
 
-impl<R: Read + Send + 'static, W: Write> Client<R, W> {
+impl<R, W> Client<R, W>
+    where R: Read + Send + 'static,
+          W: Write + Send + 'static
+{
     pub fn take_dispatch_guard(&mut self) -> JoinHandle<()> {
         self.dispatch_guard.take().expect("Can only take join handle after running event loop")
     }
 
     pub fn start_event_loop_cb<F: FnMut(&str, Vec<Value>) + Send + 'static>(&mut self, cb: F) {
-        self.dispatch_guard =
-            Some(Self::dispatch_thread(self.queue.clone(), self.reader.take().unwrap(), cb));
+        self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(),
+                                                         self.reader.take().unwrap(),
+                                                         self.writer.clone(),
+                                                         cb));
         self.event_loop_started = true;
     }
 
     pub fn start_event_loop(&mut self) {
-        self.dispatch_guard =
-            Some(Self::dispatch_thread(self.queue.clone(), self.reader.take().unwrap(), |_, _| ()));
+        self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(),
+                                                         self.reader.take().unwrap(),
+                                                         self.writer.clone(),
+                                                         |_, _| ()));
         self.event_loop_started = true;
     }
 
@@ -41,7 +52,7 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
         let queue = Arc::new(Mutex::new(HashMap::new()));
         Client {
             reader: Some(reader),
-            writer: writer,
+            writer: Arc::new(Mutex::new(writer)),
             msgid_counter: 0,
             queue: queue.clone(),
             dispatch_guard: None,
@@ -95,7 +106,9 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
         let (sender, receiver) = mpsc::channel();
         self.queue.lock().unwrap().insert(msgid, sender);
 
-        model::encode(&mut self.writer, &req).expect("Error send message");
+        let ref mut writer = *self.writer.lock().unwrap();
+        model::encode(writer, &req).expect("Error sending message");
+
         receiver
     }
 
@@ -122,6 +135,7 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
 
     fn dispatch_thread<F: FnMut(&str, Vec<Value>) + Send + 'static>(queue: Queue,
                                                                     mut reader: R,
+                                                                    writer: Arc<Mutex<W>>,
                                                                     mut cb: F)
                                                                     -> JoinHandle<()> {
         thread::spawn(move || loop {
