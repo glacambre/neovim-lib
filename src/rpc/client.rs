@@ -152,6 +152,27 @@ impl<R, W> Client<R, W>
             };
             debug!("Get message {:?}", msg);
             match msg {
+                model::RpcMessage::RpcRequest { msgid, method, params } => {
+                    let response = match handler.handle_request(&method, params) {
+                        Ok(result) => {
+                            model::RpcMessage::RpcResponse {
+                                msgid: msgid,
+                                result: result,
+                                error: Value::Nil,
+                            }
+                        }
+                        Err(error) => {
+                            model::RpcMessage::RpcResponse {
+                                msgid: msgid,
+                                result: Value::Nil,
+                                error: error,
+                            }
+                        }
+                    };
+
+                    let ref mut writer = *writer.lock().unwrap();
+                    model::encode(writer, &response).expect("Error sending RPC response");
+                }
                 model::RpcMessage::RpcResponse { msgid, result, error } => {
                     let sender = queue.lock().unwrap().remove(&msgid).unwrap();
                     if error != Value::Nil {
@@ -162,7 +183,6 @@ impl<R, W> Client<R, W>
                 model::RpcMessage::RpcNotification { method, params } => {
                     handler.handle_notify(&method, params);
                 }
-                _ => println!("Unknown type"),
             };
         })
     }
