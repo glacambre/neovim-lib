@@ -5,35 +5,48 @@ use std::time::Duration;
 use std::collections::HashMap;
 use std::sync::{mpsc, Mutex, Arc};
 
+use super::handler::{DefaultHandler, Handler};
 use super::value::Value;
 
 use super::model;
 
 type Queue = Arc<Mutex<HashMap<u64, mpsc::Sender<Result<Value, Value>>>>>;
 
-pub struct Client<R: Read + Send + 'static, W: Write> {
+pub struct Client<R, W>
+    where R: Read + Send + 'static,
+          W: Write + Send + 'static
+{
     reader: Option<R>,
-    writer: W,
+    writer: Arc<Mutex<W>>,
     dispatch_guard: Option<JoinHandle<()>>,
     event_loop_started: bool,
     queue: Queue,
     msgid_counter: u64,
 }
 
-impl<R: Read + Send + 'static, W: Write> Client<R, W> {
+impl<R, W> Client<R, W>
+    where R: Read + Send + 'static,
+          W: Write + Send + 'static
+{
     pub fn take_dispatch_guard(&mut self) -> JoinHandle<()> {
         self.dispatch_guard.take().expect("Can only take join handle after running event loop")
     }
 
-    pub fn start_event_loop_cb<F: FnMut(&str, Vec<Value>) + Send + 'static>(&mut self, cb: F) {
-        self.dispatch_guard =
-            Some(Self::dispatch_thread(self.queue.clone(), self.reader.take().unwrap(), cb));
+    pub fn start_event_loop_handler<H>(&mut self, handler: H)
+        where H: Handler + Send + 'static
+    {
+        self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(),
+                                                         self.reader.take().unwrap(),
+                                                         self.writer.clone(),
+                                                         handler));
         self.event_loop_started = true;
     }
 
     pub fn start_event_loop(&mut self) {
-        self.dispatch_guard =
-            Some(Self::dispatch_thread(self.queue.clone(), self.reader.take().unwrap(), |_, _| ()));
+        self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(),
+                                                         self.reader.take().unwrap(),
+                                                         self.writer.clone(),
+                                                         DefaultHandler()));
         self.event_loop_started = true;
     }
 
@@ -41,7 +54,7 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
         let queue = Arc::new(Mutex::new(HashMap::new()));
         Client {
             reader: Some(reader),
-            writer: writer,
+            writer: Arc::new(Mutex::new(writer)),
             msgid_counter: 0,
             queue: queue.clone(),
             dispatch_guard: None,
@@ -95,7 +108,9 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
         let (sender, receiver) = mpsc::channel();
         self.queue.lock().unwrap().insert(msgid, sender);
 
-        model::encode(&mut self.writer, &req).expect("Error send message");
+        let ref mut writer = *self.writer.lock().unwrap();
+        model::encode(writer, &req).expect("Error sending message");
+
         receiver
     }
 
@@ -120,10 +135,13 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
         receiver.recv().unwrap()
     }
 
-    fn dispatch_thread<F: FnMut(&str, Vec<Value>) + Send + 'static>(queue: Queue,
-                                                                    mut reader: R,
-                                                                    mut cb: F)
-                                                                    -> JoinHandle<()> {
+    fn dispatch_thread<H>(queue: Queue,
+                          mut reader: R,
+                          writer: Arc<Mutex<W>>,
+                          mut handler: H)
+                          -> JoinHandle<()>
+        where H: Handler + Send + 'static
+    {
         thread::spawn(move || loop {
             let msg = match model::decode(&mut reader) {
                 Ok(msg) => msg,
@@ -134,6 +152,27 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
             };
             debug!("Get message {:?}", msg);
             match msg {
+                model::RpcMessage::RpcRequest { msgid, method, params } => {
+                    let response = match handler.handle_request(&method, params) {
+                        Ok(result) => {
+                            model::RpcMessage::RpcResponse {
+                                msgid: msgid,
+                                result: result,
+                                error: Value::Nil,
+                            }
+                        }
+                        Err(error) => {
+                            model::RpcMessage::RpcResponse {
+                                msgid: msgid,
+                                result: Value::Nil,
+                                error: error,
+                            }
+                        }
+                    };
+
+                    let ref mut writer = *writer.lock().unwrap();
+                    model::encode(writer, &response).expect("Error sending RPC response");
+                }
                 model::RpcMessage::RpcResponse { msgid, result, error } => {
                     let sender = queue.lock().unwrap().remove(&msgid).unwrap();
                     if error != Value::Nil {
@@ -142,9 +181,8 @@ impl<R: Read + Send + 'static, W: Write> Client<R, W> {
                     sender.send(Ok(result)).unwrap();
                 }
                 model::RpcMessage::RpcNotification { method, params } => {
-                    cb(&method, params);
+                    handler.handle_notify(&method, params);
                 }
-                _ => println!("Unknown type"),
             };
         })
     }

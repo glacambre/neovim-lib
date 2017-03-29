@@ -12,6 +12,7 @@ use std::path::Path;
 #[cfg(unix)]
 use unix_socket::UnixStream;
 
+use rpc::handler::Handler;
 use rpc::value::Value;
 
 use rpc::Client;
@@ -93,13 +94,17 @@ impl Session {
     }
 
     /// Start processing rpc response and notifications
-    pub fn start_event_loop_cb<F: FnMut(&str, Vec<Value>) + Send + 'static>(&mut self, cb: F) {
+    pub fn start_event_loop_handler<H>(&mut self, handler: H)
+        where H: Handler + Send + 'static
+    {
         match self.client {
-            ClientConnection::Child(ref mut client, _) => client.start_event_loop_cb(cb),
-            ClientConnection::Tcp(ref mut client) => client.start_event_loop_cb(cb),
+            ClientConnection::Child(ref mut client, _) => client.start_event_loop_handler(handler),
+            ClientConnection::Tcp(ref mut client) => client.start_event_loop_handler(handler),
 
             #[cfg(unix)]
-            ClientConnection::UnixSocket(ref mut client) => client.start_event_loop_cb(cb),
+            ClientConnection::UnixSocket(ref mut client) => {
+                client.start_event_loop_handler(handler)
+            }
         }
     }
 

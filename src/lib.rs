@@ -32,4 +32,5 @@ pub use neovim::{Neovim, UiAttachOptions, CallError};
 pub use neovim_api::NeovimApi;
 pub use session::Session;
 
+pub use rpc::handler::{Handler};
 pub use rpc::value::{Value, Integer, Float};
