@@ -13,7 +13,7 @@ use std::path::Path;
 use unix_socket::UnixStream;
 
 use rpc::handler::Handler;
-use rpc::value::Value;
+use rmpv::Value;
 
 use rpc::Client;
 

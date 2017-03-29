@@ -16,6 +16,7 @@
 //! windows[0].set_width(&mut nvim, 10).unwrap();
 //! ```
 extern crate rmp;
+extern crate rmpv;
 #[macro_use]
 extern crate log;
 
@@ -33,4 +34,4 @@ pub use neovim_api::NeovimApi;
 pub use session::Session;
 
 pub use rpc::handler::{Handler};
-pub use rpc::value::{Value, Integer, Float};
+pub use rmpv::{Value, Integer};

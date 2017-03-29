@@ -5,9 +5,13 @@ extern crate tempdir;
 use neovim_lib::session::Session;
 use neovim_lib::neovim::Neovim;
 use neovim_lib::neovim_api::NeovimApi;
+
+#[cfg(unix)]
 use neovim_lib::Value;
 
+#[cfg(unix)]
 use std::process::Command;
+#[cfg(unix)]
 use tempdir::TempDir;
 
 #[ignore]

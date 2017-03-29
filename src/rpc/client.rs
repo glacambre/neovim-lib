@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::sync::{mpsc, Mutex, Arc};
 
 use super::handler::{DefaultHandler, Handler};
-use super::value::Value;
+use rmpv::Value;
 
 use super::model;
 
@@ -68,7 +68,7 @@ impl<R, W> Client<R, W>
                         dur: Duration)
                         -> Result<Value, Value> {
         if !self.event_loop_started {
-            return Err(Value::String("Event loop not started".to_owned()));
+            return Err(Value::from("Event loop not started"));
         }
 
         let mut wait_time = dur.as_secs() * 1_000_000_000 + dur.subsec_nanos() as u64;
@@ -81,11 +81,11 @@ impl<R, W> Client<R, W>
                     thread::sleep(Duration::new(0, 1000_000));
                     wait_time -= 1000_000;
                     if wait_time <= 0 {
-                        return Err(Value::String("Wait timeout".to_owned()));
+                        return Err(Value::from("Wait timeout"));
                     }
                 }
                 Err(mpsc::TryRecvError::Disconnected) => {
-                    return Err(Value::String("Channel disconnected".to_owned()))
+                    return Err(Value::from("Channel disconnected"))
                 }
                 Ok(val) => return val,
             };
@@ -127,7 +127,7 @@ impl<R, W> Client<R, W>
 
     pub fn call_inf(&mut self, method: &str, args: &Vec<Value>) -> Result<Value, Value> {
         if !self.event_loop_started {
-            return Err(Value::String("Event loop not started".to_owned()));
+            return Err(Value::from("Event loop not started"));
         }
 
         let receiver = self.send_msg(method, args);

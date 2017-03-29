@@ -1,6 +1,6 @@
 use session::Session;
 use rpc::*;
-use rpc::value::{Value, Integer};
+use rmpv::Value;
 use neovim_api::NeovimApi;
 use std::fmt;
 use std::error::Error;
@@ -31,7 +31,8 @@ impl UiAttachOptions {
     }
 
     fn to_value_map(&self) -> Value {
-        Value::Map(vec![(Value::String("rgb".to_owned()), Value::Boolean(self.rgb)), (Value::String("popupmenu_external".to_owned()), Value::Boolean(self.popupmenu_external))])
+        Value::Map(vec![(Value::from("rgb"), Value::from(self.rgb)), 
+                   (Value::from("popupmenu_external"), Value::from(self.popupmenu_external))])
     }
 }
 
@@ -63,12 +64,12 @@ impl Error for CallError {
 #[doc(hidden)]
 pub fn map_generic_error(err: Value) -> CallError {
     match err {
-        Value::String(val) => CallError::GenericError(val),
+        Value::String(val) => CallError::GenericError(val.as_str().unwrap().to_owned()),
         Value::Array(arr) => {
             if arr.len() == 2 {
                 match (&arr[0], &arr[1]) {
-                    (&Value::Integer(Integer::U64(id)), &Value::String(ref val)) => {
-                        CallError::NeovimError(id, val.to_owned())
+                    (&Value::Integer(ref id), &Value::String(ref val)) => {
+                        CallError::NeovimError(id.as_u64().unwrap(), val.as_str().unwrap().to_owned())
                     }
                     _ => CallError::GenericError(format!("{:?}", arr)),
                 }

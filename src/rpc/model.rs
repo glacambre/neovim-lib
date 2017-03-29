@@ -1,5 +1,7 @@
 
-use super::value::{read_value, write_value, Value, Integer};
+use rmpv::decode::read_value;
+use rmpv::encode::write_value;
+use rmpv::Value;
 use std::io;
 use std::io::{Read, Write};
 use std::error::Error;
@@ -20,22 +22,22 @@ pub enum RpcMessage {
 }
 
 macro_rules! try_str {
-    ($exp:expr, $msg:expr) => (match $exp {
-        Value::String(ref val) => val.to_owned(),
+    ($exp:expr, $msg:expr) => (match $exp.as_str() {
+        Some(val) => val.to_owned(),
         _ => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg)))
     })
 }
 
 macro_rules! try_int {
-    ($exp:expr, $msg:expr) => (match $exp {
-        Value::Integer(Integer::U64(val)) => val,
+    ($exp:expr, $msg:expr) => (match $exp.as_u64() {
+        Some(val) => val,
         _ => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg)))
     })
 }
 
 macro_rules! try_arr {
-    ($exp:expr, $msg:expr) => (match $exp {
-        Value::Array(ref arr) => arr.to_owned(),
+    ($exp:expr, $msg:expr) => (match $exp.as_array() {
+        Some(arr) => arr.to_owned(),
         _ => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg)))
     })
 }
@@ -44,9 +46,9 @@ macro_rules! rpc_args {
     ($($e:expr), *) => {{
         let mut vec = Vec::new();
         $(
-            vec.push($e.into_val());
+            vec.push(Value::from($e));
         )*
-        vec.into_val()
+        Value::from(vec)
     }}
 }
 
@@ -143,27 +145,12 @@ impl<T: FromVal<Value>> FromVal<Value> for Vec<T> {
 
 impl FromVal<Value> for (u64, u64) {
     fn from_val(val: Value) -> Self {
-        if let Value::Array(res) = val {
-            if res.len() != 2 {
-                panic!("Array length must be 2");
-            }
-            let p1_val: &Value = &res[0];
-            let p2_val: &Value = &res[1];
-            let p1 = if let &Value::Integer(Integer::U64(ref p1)) = p1_val {
-                *p1
-            } else {
-                panic!("Can't get u64 value at position 0");
-            };
-
-            let p2 = if let &Value::Integer(Integer::U64(ref p2)) = p2_val {
-                *p2
-            } else {
-                panic!("Can't get u64 value at position 1");
-            };
-
-            return (p1, p2);
+        let res = val.as_array().expect("Can't convert to point(u64,u64) value");
+        if res.len() != 2 {
+            panic!("Array length must be 2");
         }
-        panic!("Can't convert to string");
+        return (res[0].as_u64().expect("Can't get u64 value at position 0"), 
+                res[1].as_u64().expect("Can't get u64 value at position 1"));
     }
 }
 
@@ -178,19 +165,13 @@ impl FromVal<Value> for bool {
 
 impl FromVal<Value> for String {
     fn from_val(val: Value) -> Self {
-        if let Value::String(res) = val {
-            return res;
-        }
-        panic!("Can't convert to string");
+        val.as_str().expect("Can't convert to string").to_owned()
     }
 }
 
 impl FromVal<Value> for u64 {
     fn from_val(val: Value) -> Self {
-        if let Value::Integer(Integer::U64(res)) = val {
-            return res;
-        }
-        panic!("Can't convert to string");
+        val.as_u64().expect("Can't convert to u64")
     }
 }
 
@@ -200,13 +181,14 @@ pub trait IntoVal<T> {
 
 impl<'a> IntoVal<Value> for &'a str {
     fn into_val(self) -> Value {
-        Value::String(self.to_string())
+        Value::from(self)
     }
 }
 
 impl IntoVal<Value> for Vec<String> {
     fn into_val(self) -> Value {
-        Value::Array(self.iter().map(|v| Value::String(v.to_string())).collect())
+        let vec: Vec<Value> = self.iter().map(|v| Value::from(v.as_str())).collect();
+        Value::from(vec)
     }
 }
 
@@ -218,7 +200,7 @@ impl IntoVal<Value> for Vec<Value> {
 
 impl IntoVal<Value> for (u64, u64) {
     fn into_val(self) -> Value {
-        Value::Array(vec![self.0.into_val(), self.1.into_val()])
+        Value::Array(vec![Value::from(self.0), Value::from(self.1)])
     }
 }
 
@@ -230,13 +212,13 @@ impl IntoVal<Value> for bool {
 
 impl IntoVal<Value> for u64 {
     fn into_val(self) -> Value {
-        Value::Integer(Integer::U64(self))
+        Value::from(self)
     }
 }
 
 impl IntoVal<Value> for String {
     fn into_val(self) -> Value {
-        Value::String(self)
+        Value::from(self)
     }
 }
 
