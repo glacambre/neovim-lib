@@ -16,7 +16,7 @@ pub struct UiAttachOptions {
 
 impl UiAttachOptions {
     pub fn new() -> UiAttachOptions {
-        UiAttachOptions { 
+        UiAttachOptions {
             rgb: true,
             popupmenu_external: false,
         }
@@ -31,8 +31,9 @@ impl UiAttachOptions {
     }
 
     fn to_value_map(&self) -> Value {
-        Value::Map(vec![(Value::from("rgb"), Value::from(self.rgb)), 
-                   (Value::from("popupmenu_external"), Value::from(self.popupmenu_external))])
+        Value::Map(vec![(Value::from("rgb"), Value::from(self.rgb)),
+                        (Value::from("popupmenu_external"),
+                         Value::from(self.popupmenu_external))])
     }
 }
 
@@ -69,7 +70,8 @@ pub fn map_generic_error(err: Value) -> CallError {
             if arr.len() == 2 {
                 match (&arr[0], &arr[1]) {
                     (&Value::Integer(ref id), &Value::String(ref val)) => {
-                        CallError::NeovimError(id.as_u64().unwrap(), val.as_str().unwrap().to_owned())
+                        CallError::NeovimError(id.as_u64().unwrap(),
+                                               val.as_str().unwrap().to_owned())
                     }
                     _ => CallError::GenericError(format!("{:?}", arr)),
                 }
@@ -94,9 +96,14 @@ impl Neovim {
     /// Register as a remote UI.
     ///
     /// After this method is called, the client will receive redraw notifications.
-    pub fn ui_attach(&mut self, width: u64, height: u64, opts: UiAttachOptions) -> Result<(), CallError>  {
+    pub fn ui_attach(&mut self,
+                     width: u64,
+                     height: u64,
+                     opts: UiAttachOptions)
+                     -> Result<(), CallError> {
         self.session
-            .call("nvim_ui_attach", &call_args!(width, height, opts.to_value_map()))
+            .call("nvim_ui_attach",
+                  &call_args!(width, height, opts.to_value_map()))
             .map_err(map_generic_error)
             .map(|_| ())
     }

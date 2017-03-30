@@ -139,7 +139,7 @@ impl<T: FromVal<Value>> FromVal<Value> for Vec<T> {
                 .map(|v| T::from_val(v.clone()))
                 .collect();
         }
-        panic!("Can't convert to string");
+        panic!("Can't convert to array");
     }
 }
 
@@ -159,7 +159,7 @@ impl FromVal<Value> for bool {
         if let Value::Boolean(res) = val {
             return res;
         }
-        panic!("Can't convert to string");
+        panic!("Can't convert to bool");
     }
 }
 
@@ -194,19 +194,19 @@ impl IntoVal<Value> for Vec<String> {
 
 impl IntoVal<Value> for Vec<Value> {
     fn into_val(self) -> Value {
-        Value::Array(self)
+        Value::from(self)
     }
 }
 
 impl IntoVal<Value> for (u64, u64) {
     fn into_val(self) -> Value {
-        Value::Array(vec![Value::from(self.0), Value::from(self.1)])
+        Value::from(vec![Value::from(self.0), Value::from(self.1)])
     }
 }
 
 impl IntoVal<Value> for bool {
     fn into_val(self) -> Value {
-        Value::Boolean(self)
+        Value::from(self)
     }
 }
 
