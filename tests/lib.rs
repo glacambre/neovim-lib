@@ -7,9 +7,6 @@ use neovim_lib::neovim::Neovim;
 use neovim_lib::neovim_api::NeovimApi;
 
 #[cfg(unix)]
-use neovim_lib::Value;
-
-#[cfg(unix)]
 use std::process::Command;
 #[cfg(unix)]
 use tempdir::TempDir;
@@ -99,15 +96,15 @@ fn can_connect_via_unix_socket() {
         .expect("Error retrieving servername from neovim over unix socket");
 
     // let's make sure the servername string and socket path string both match.
-    match servername {
-        Value::String(ref name) => {
+    match servername.as_str() {
+        Some(ref name) => {
             if Path::new(name) != socket_path {
                 panic!(format!("Server name does not match socket path! {} != {}",
                                name,
                                socket_path.to_str().unwrap()));
             }
         }
-        _ => {
+        None => {
             panic!(format!("Server name does not match socket path! {:?} != {}",
                            servername,
                            socket_path.to_str().unwrap()))
