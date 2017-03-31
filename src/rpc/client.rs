@@ -153,7 +153,7 @@ impl<R, W> Client<R, W>
             debug!("Get message {:?}", msg);
             match msg {
                 model::RpcMessage::RpcRequest { msgid, method, params } => {
-                    let response = match handler.handle_request(&method, params) {
+                    let response = match handler.handle_request(&method, &params) {
                         Ok(result) => {
                             model::RpcMessage::RpcResponse {
                                 msgid: msgid,
@@ -181,7 +181,7 @@ impl<R, W> Client<R, W>
                     sender.send(Ok(result)).unwrap();
                 }
                 model::RpcMessage::RpcNotification { method, params } => {
-                    handler.handle_notify(&method, params);
+                    handler.handle_notify(&method, &params);
                 }
             };
         })
