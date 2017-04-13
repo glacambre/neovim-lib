@@ -12,7 +12,7 @@ keywords = ["neovim"]
 exclude = ["generate.bat", "Makefile"]
 
 [badges]
-travis-ci = { repository = "https://github.com/daa84/neovim-lib", branch = "master"  }
+travis-ci = { repository = "daa84/neovim-lib", branch = "master"  }
 
 [dependencies]
 rmp = "0.8"
