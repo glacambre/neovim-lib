@@ -7,7 +7,6 @@ use std::process::{Command, Child, ChildStdin, ChildStdout};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
-#[cfg(unix)]
 use std::path::Path;
 #[cfg(unix)]
 use unix_socket::UnixStream;
@@ -66,8 +65,15 @@ impl Session {
     }
 
     /// Connect to a Neovim instance by spawning a new one
-    pub fn new_child_path(program: &str) -> Result<Session> {
-        let mut child = Command::new(program).arg("--embed")
+    pub fn new_child_path<S: AsRef<Path>>(program: S) -> Result<Session> {
+        Self::new_child_cmd(Command::new(program.as_ref()).arg("--embed"))
+    }
+
+    /// Connect to a Neovim instance by spawning a new one
+    ///
+    /// stdin/stdout settings will be rewrited to `Stdio::piped()`
+    pub fn new_child_cmd(cmd: &mut Command) -> Result<Session> {
+         let mut child = cmd
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()?;
