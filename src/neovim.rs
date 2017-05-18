@@ -12,6 +12,7 @@ pub struct Neovim {
 pub struct UiAttachOptions {
     rgb: bool,
     popupmenu_external: bool,
+    tabline_external: bool,
 }
 
 impl UiAttachOptions {
@@ -19,6 +20,7 @@ impl UiAttachOptions {
         UiAttachOptions {
             rgb: true,
             popupmenu_external: false,
+            tabline_external: false,
         }
     }
 
@@ -30,10 +32,14 @@ impl UiAttachOptions {
         self.popupmenu_external = popupmenu_external;
     }
 
+    pub fn set_tabline_external(&mut self, tabline_external: bool) {
+        self.tabline_external = tabline_external;
+    }
+
     fn to_value_map(&self) -> Value {
         Value::Map(vec![(Value::from("rgb"), Value::from(self.rgb)),
-                        (Value::from("popupmenu_external"),
-                         Value::from(self.popupmenu_external))])
+                        (Value::from("popupmenu_external"), Value::from(self.popupmenu_external)),
+                        (Value::from("ext_tabline"), Value::from(self.tabline_external))])
     }
 }
 
@@ -110,7 +116,10 @@ impl Neovim {
 
     /// Unregister as a remote UI.
     pub fn ui_detach(&mut self) -> Result<(), CallError> {
-        self.session.call("ui_detach", &vec![]).map_err(map_generic_error).map(|_| ())
+        self.session
+            .call("ui_detach", &vec![])
+            .map_err(map_generic_error)
+            .map(|_| ())
     }
 
     /// Notify nvim that the client window has resized.

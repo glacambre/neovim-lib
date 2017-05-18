@@ -129,7 +129,11 @@ class Function:
         self.fun = nvim_fun
         self.parameters = []
         self.name =  self.fun['name']
-        self.ext = not self.name.startswith('vim')
+        # TODO: clean unused attrs
+        # TODO: check over attrs
+        # TODO: deprecated
+        # TODO: use new funcs for win/buf/tab naming good
+        self.ext = not self.name.startswith('nvim')
         try:
             self.return_type = NeovimTypeVal(self.fun['return_type'])
             if self.ext:
@@ -196,7 +200,7 @@ def print_api(api):
         elif key == 'features':
             pass
         else:
-            print('Unknown API info attribute: %s', key)
+            print('Unknown API info attribute: %s' % key)
 
 if __name__ == '__main__':
 

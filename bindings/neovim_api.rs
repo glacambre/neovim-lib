@@ -47,13 +47,13 @@ impl <'a> IntoVal<Value> for &'a {{typename}} {
 
 pub trait NeovimApi {
     {% for f in functions if not f.ext %}
-    fn {{f.name|replace('vim_', '')}}(&mut self, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, CallError>;
+    fn {{f.name|replace('nvim_', '')}}(&mut self, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, CallError>;
     {% endfor %}
 }
 
 impl NeovimApi for Neovim {
     {% for f in functions if not f.ext %}
-    fn {{f.name|replace('vim_', '')}}(&mut self, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, CallError> {
+    fn {{f.name|replace('nvim_', '')}}(&mut self, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, CallError> {
         self.session.call("{{f.name}}",
                           &call_args![{{ f.parameters|map(attribute = "name")|join(", ") }}])
                     .map(map_result)
