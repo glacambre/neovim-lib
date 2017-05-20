@@ -124,16 +124,15 @@ class Function:
     """
     Representation for a Neovim API Function
     """
-    def __init__(self, nvim_fun):
+    def __init__(self, nvim_fun, all_ext_prefixes):
         self.valid = False
         self.fun = nvim_fun
         self.parameters = []
         self.name =  self.fun['name']
-        # TODO: clean unused attrs
-        # TODO: check over attrs
-        # TODO: deprecated
-        # TODO: use new funcs for win/buf/tab naming good
-        self.ext = not self.name.startswith('nvim')
+        self.since = self.fun['since']
+
+        self.ext = self._is_ext(all_ext_prefixes)
+
         try:
             self.return_type = NeovimTypeVal(self.fun['return_type'])
             if self.ext:
@@ -145,32 +144,30 @@ class Function:
         except UnsupportedType as ex:
             print('Found unsupported type(%s) when adding function %s(), skipping' % (ex,self.name))
             return
-        self.argcount = len(self.parameters)
-        self.can_fail = self.fun.get('can_fail', False)
 
         # Build the argument string - makes it easier for the templates
         self.argstring = ', '.join(['%s: %s' % (tv.name, tv.native_type_arg) for tv in self.parameters])
-        self.valid = True
 
-    def real_signature(self):
-        params = ''
-        for p in self.parameters:
-            params += '%s %s' % (p.native_type_arg, p.name)
-            params += ', '
-        notes = ''
-        if self.can_fail:
-            notes += '!fails'
-        return '%s %s(%s) %s' % (self.return_type.native_type_arg,self.name,params, notes)
-    def signature(self):
-        params = ''
-        for p in self.parameters:
-            params += '%s %s' % (p.neovim_type, p.name)
-            params += ', '
-        notes = ''
-        if self.can_fail:
-            notes += '!fails'
-        return '%s %s(%s) %s' % (self.return_type.neovim_type,self.name,params, notes)
+        # filter function, use only nvim one
+        # nvim_ui_attach implemented manually
+        self.valid = self.name.startswith('nvim')\
+                and self.name != 'nvim_ui_attach'
 
+    def _is_ext(self, all_ext_prefixes):
+        for prefix in all_ext_prefixes:
+            if self.name.startswith(prefix):
+                return True
+        return False
+
+class ExtType:
+
+    """Ext type, Buffer, Window, Tab"""
+
+    def __init__(self, typename, info):
+        self.name = typename
+        self.id = info['id']
+        self.prefix = info['prefix']
+        
 
 def print_api(api):
     print(api.keys());
@@ -178,14 +175,8 @@ def print_api(api):
         if key == 'functions':
             print('Functions')
             for f in api[key]:
-                fundef = Function(f)
-                if not fundef.valid:
-                    continue
-                sig = fundef.signature()
-                realsig = fundef.real_signature()
-                print('\t%s'% sig)
-                if sig != realsig:
-                    print('\t[aka %s]\n' % realsig)
+                if f['name'].startswith('nvim'):
+                    print(f)
             print('')
         elif key == 'types':
             print('Data Types')
@@ -228,9 +219,11 @@ if __name__ == '__main__':
             if name.endswith('.rs'):
                 env = {}
                 env['date'] = datetime.datetime.now()
-                functions = [Function(f) for f in api['functions']]
+
+                exttypes = [ ExtType(typename, info) for typename,info in api['types'].items() ]
+                all_ext_prefixes = { exttype.prefix for exttype in exttypes }
+                functions = [Function(f, all_ext_prefixes) for f in api['functions']]
                 env['functions'] = [f for f in functions if f.valid]
-                exttypes = { typename:info['id'] for typename,info in api['types'].items()}
                 env['exttypes'] = exttypes
                 generate_file(name, outpath, **env)
 

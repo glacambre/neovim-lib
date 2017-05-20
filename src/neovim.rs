@@ -114,24 +114,6 @@ impl Neovim {
             .map(|_| ())
     }
 
-    /// Unregister as a remote UI.
-    pub fn ui_detach(&mut self) -> Result<(), CallError> {
-        self.session
-            .call("ui_detach", &vec![])
-            .map_err(map_generic_error)
-            .map(|_| ())
-    }
-
-    /// Notify nvim that the client window has resized.
-    ///
-    /// If possible, nvim will send a redraw request to resize.
-    pub fn ui_try_resize(&mut self, width: u64, height: u64) -> Result<(), CallError> {
-        self.session
-            .call("ui_try_resize", &call_args!(width, height))
-            .map_err(map_generic_error)
-            .map(|_| ())
-    }
-
     /// Send a quit command to Nvim.
     /// The quit command is 'qa!' which will make Nvim quit without
     /// saving anything.

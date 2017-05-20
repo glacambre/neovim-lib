@@ -3,20 +3,21 @@
 use neovim::*;
 use rpc::*;
 
-{% for typename in exttypes %}
-pub struct {{ typename }} {
+{% for etype in exttypes %}
+pub struct {{ etype.name }} {
     code_data: Value,
 }
 
-impl {{ typename }} {
-    pub fn new(code_data: Value) -> {{ typename }} {
-        {{ typename }} {
+impl {{ etype.name }} {
+    pub fn new(code_data: Value) -> {{ etype.name }} {
+        {{ etype.name }} {
             code_data: code_data,
         }
     }
 
-    {% for f in functions if f.ext and f.name.startswith(typename.lower()) %}
-    pub fn {{f.name|replace(typename.lower() + '_', '')}}(&self, neovim: &mut Neovim, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, CallError> {
+    {% for f in functions if f.ext and f.name.startswith(etype.prefix) %}
+    /// since: {{f.since}}
+    pub fn {{f.name|replace(etype.prefix, '')}}(&self, neovim: &mut Neovim, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, CallError> {
         neovim.session.call("{{f.name}}",
                           &call_args![self.code_data.clone()
                           {% if f.parameters|count > 0 %}
@@ -31,14 +32,14 @@ impl {{ typename }} {
 
 {% endfor %}
 
-{% for typename in exttypes %}
-impl FromVal<Value> for {{ typename }} {
+{% for etype in exttypes %}
+impl FromVal<Value> for {{ etype.name }} {
     fn from_val(val: Value) -> Self {
-        {{ typename }}::new(val)
+        {{ etype.name }}::new(val)
     }
 }
 
-impl <'a> IntoVal<Value> for &'a {{typename}} {
+impl <'a> IntoVal<Value> for &'a {{etype.name}} {
     fn into_val(self) -> Value {
         self.code_data.clone()
     }
@@ -47,6 +48,7 @@ impl <'a> IntoVal<Value> for &'a {{typename}} {
 
 pub trait NeovimApi {
     {% for f in functions if not f.ext %}
+    /// since: {{f.since}}
     fn {{f.name|replace('nvim_', '')}}(&mut self, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, CallError>;
     {% endfor %}
 }
