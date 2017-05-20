@@ -41,10 +41,10 @@ fn edit_test() {
     let mut session = Session::new_tcp("127.0.0.1:6666").unwrap();
     session.start_event_loop();
     let mut nvim = Neovim::new(session);
-    let buffers = nvim.get_buffers().unwrap();
-    buffers[0].set_line(&mut nvim, 0, "replace first line").unwrap();
+    let buffers = nvim.list_bufs().unwrap();
+    buffers[0].set_lines(&mut nvim, 0, 0, true, vec!["replace first line".to_owned()]).unwrap();
     nvim.command("vsplit").unwrap();
-    let windows = nvim.get_windows().unwrap();
+    let windows = nvim.list_wins().unwrap();
     windows[0].set_width(&mut nvim, 10).unwrap();
 }
 
