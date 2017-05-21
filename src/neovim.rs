@@ -38,7 +38,7 @@ impl UiAttachOptions {
 
     fn to_value_map(&self) -> Value {
         Value::Map(vec![(Value::from("rgb"), Value::from(self.rgb)),
-                        (Value::from("popupmenu_external"), Value::from(self.popupmenu_external)),
+                        (Value::from("ext_popupmenu"), Value::from(self.popupmenu_external)),
                         (Value::from("ext_tabline"), Value::from(self.tabline_external))])
     }
 }
