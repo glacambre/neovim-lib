@@ -188,8 +188,10 @@ def print_api(api):
             for err,desc in api[key].items():
                 print('\t%s:%d' % (err,desc['id']))
             print('')
-        elif key == 'features':
-            pass
+        elif key == 'version':
+            print('Version')
+            print(api[key])
+            print('')
         else:
             print('Unknown API info attribute: %s' % key)
 
