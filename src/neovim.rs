@@ -9,37 +9,58 @@ pub struct Neovim {
     pub session: Session,
 }
 
+pub enum UiOption {
+    RGB(bool),
+    ExtPopupmenu(bool),
+    ExtTabline(bool),
+}
+
+impl UiOption {
+    fn to_value(&self) -> (Value, Value) {
+        let name_value = self.to_name_value();
+        (name_value.0.into(), name_value.1)
+    }
+
+    fn to_name_value(&self) -> (&str, Value) {
+        match self {
+            &UiOption::RGB(val) => ("rgb", val.into()),
+            &UiOption::ExtPopupmenu(val) => ("ext_popupmenu", val.into()),
+            &UiOption::ExtTabline(val) => ("ext_tabline", val.into()),
+        }
+    }
+}
+
 pub struct UiAttachOptions {
-    rgb: bool,
-    popupmenu_external: bool,
-    tabline_external: bool,
+    rgb: UiOption,
+    popupmenu_external: UiOption,
+    tabline_external: UiOption,
 }
 
 impl UiAttachOptions {
     pub fn new() -> UiAttachOptions {
         UiAttachOptions {
-            rgb: true,
-            popupmenu_external: false,
-            tabline_external: false,
+            rgb: UiOption::RGB(true),
+            popupmenu_external: UiOption::ExtPopupmenu(false),
+            tabline_external: UiOption::ExtTabline(false),
         }
     }
 
     pub fn set_rgb(&mut self, rgb: bool) {
-        self.rgb = rgb;
+        self.rgb = UiOption::RGB(rgb);
     }
 
     pub fn set_popupmenu_external(&mut self, popupmenu_external: bool) {
-        self.popupmenu_external = popupmenu_external;
+        self.popupmenu_external = UiOption::ExtPopupmenu(popupmenu_external);
     }
 
     pub fn set_tabline_external(&mut self, tabline_external: bool) {
-        self.tabline_external = tabline_external;
+        self.tabline_external = UiOption::ExtTabline(tabline_external);
     }
 
     fn to_value_map(&self) -> Value {
-        Value::Map(vec![(Value::from("rgb"), Value::from(self.rgb)),
-                        (Value::from("ext_popupmenu"), Value::from(self.popupmenu_external)),
-                        (Value::from("ext_tabline"), Value::from(self.tabline_external))])
+        Value::Map(vec![self.rgb.to_value(),
+                        self.popupmenu_external.to_value(),
+                        self.tabline_external.to_value()])
     }
 }
 
@@ -119,5 +140,11 @@ impl Neovim {
     /// saving anything.
     pub fn quit_no_save(&mut self) -> Result<(), CallError> {
         self.command("qa!")
+    }
+
+    /// Same as `ui_set_option` but use `UiOption` as argument to check type at compile time
+    pub fn set_option(&mut self, option: UiOption) -> Result<(), CallError> {
+        let name_value = option.to_name_value();
+        self.ui_set_option(name_value.0, name_value.1)
     }
 }
