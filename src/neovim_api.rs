@@ -1,8 +1,9 @@
-// Auto generated 2017-05-20 22:31:34.877603
+// Auto generated 2017-05-27 23:09:29.468174
 
 use neovim::*;
 use rpc::*;
 
+#[derive(PartialEq)]
 pub struct Buffer {
     code_data: Value,
 }
@@ -190,6 +191,7 @@ impl Buffer {
     }
 }
 
+#[derive(PartialEq)]
 pub struct Window {
     code_data: Value,
 }
@@ -341,6 +343,7 @@ impl Window {
     }
 }
 
+#[derive(PartialEq)]
 pub struct Tabpage {
     code_data: Value,
 }
