@@ -4,7 +4,7 @@ use neovim::*;
 use rpc::*;
 
 {% for etype in exttypes %}
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub struct {{ etype.name }} {
     code_data: Value,
 }
