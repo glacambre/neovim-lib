@@ -4,7 +4,7 @@ use neovim::*;
 use rpc::*;
 
 {% for etype in exttypes %}
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct {{ etype.name }} {
     code_data: Value,
 }
@@ -14,6 +14,11 @@ impl {{ etype.name }} {
         {{ etype.name }} {
             code_data: code_data,
         }
+    }
+
+    /// Internal value, that represent type
+    pub fn get_value(&self) -> &Value {
+        &self.code_data
     }
 
     {% for f in functions if f.ext and f.name.startswith(etype.prefix) %}

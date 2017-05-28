@@ -1,9 +1,9 @@
-// Auto generated 2017-05-27 23:22:04.468883
+// Auto generated 2017-05-28 11:18:20.638588
 
 use neovim::*;
 use rpc::*;
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Buffer {
     code_data: Value,
 }
@@ -11,6 +11,11 @@ pub struct Buffer {
 impl Buffer {
     pub fn new(code_data: Value) -> Buffer {
         Buffer { code_data: code_data }
+    }
+
+    /// Internal value, that represent type
+    pub fn get_value(&self) -> &Value {
+        &self.code_data
     }
 
     /// since: 1
@@ -191,7 +196,7 @@ impl Buffer {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Window {
     code_data: Value,
 }
@@ -199,6 +204,11 @@ pub struct Window {
 impl Window {
     pub fn new(code_data: Value) -> Window {
         Window { code_data: code_data }
+    }
+
+    /// Internal value, that represent type
+    pub fn get_value(&self) -> &Value {
+        &self.code_data
     }
 
     /// since: 1
@@ -343,7 +353,7 @@ impl Window {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Tabpage {
     code_data: Value,
 }
@@ -351,6 +361,11 @@ pub struct Tabpage {
 impl Tabpage {
     pub fn new(code_data: Value) -> Tabpage {
         Tabpage { code_data: code_data }
+    }
+
+    /// Internal value, that represent type
+    pub fn get_value(&self) -> &Value {
+        &self.code_data
     }
 
     /// since: 1
