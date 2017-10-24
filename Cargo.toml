@@ -1,6 +1,6 @@
 [package]
 name = "neovim-lib"
-version = "0.4.2"
+version = "0.4.3"
 authors = ["daa84 <daa84@inbox.ru>"]
 license = "LGPL-3.0"
 description = "msgpack-rpc neovim client"
@@ -16,7 +16,7 @@ travis-ci = { repository = "daa84/neovim-lib", branch = "master"  }
 
 [dependencies]
 rmp = "0.8"
-rmpv = "0.3"
+rmpv = { version ="0.4", features=["with-serde"] }
 log = "0.3"
 
 [target.'cfg(unix)'.dependencies]
