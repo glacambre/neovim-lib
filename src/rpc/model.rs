@@ -22,8 +22,11 @@ pub enum RpcMessage {
 }
 
 macro_rules! try_str {
-    ($exp:expr, $msg:expr) => (match $exp.as_str() {
-        Some(val) => val.to_owned(),
+    ($exp:expr, $msg:expr) => (match $exp {
+        Value::String(val) => match val.into_str() {
+            Some(s) => s,
+            None => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg))),
+        },
         _ => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg)))
     })
 }
@@ -36,8 +39,8 @@ macro_rules! try_int {
 }
 
 macro_rules! try_arr {
-    ($exp:expr, $msg:expr) => (match $exp.as_array() {
-        Some(arr) => arr.to_owned(),
+    ($exp:expr, $msg:expr) => (match $exp {
+        Value::Array(arr) => arr,
         _ => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg)))
     })
 }
@@ -53,12 +56,14 @@ macro_rules! rpc_args {
 }
 
 pub fn decode<R: Read>(reader: &mut R) -> Result<RpcMessage, Box<Error>> {
-    let arr = try_arr!(read_value(reader)?, "Rpc message must be array");
+    let mut arr = try_arr!(read_value(reader)?, "Rpc message must be array");
     match try_int!(arr[0], "Can't find message type") {
         0 => {
-            let msgid = try_int!(arr[1], "msgid not found");
-            let method = try_str!(arr[2], "method not found");
-            let params = try_arr!(arr[3], "params not found");
+            arr.truncate(4);
+            let params = try_arr!(arr.pop().unwrap(), "params not found"); // [3]
+            let method = try_str!(arr.pop().unwrap(), "method not found"); // [2]
+            let msgid = try_int!(arr.pop().unwrap(), "msgid not found"); // [1]
+
             Ok(RpcMessage::RpcRequest {
                 msgid: msgid,
                 method: method,
@@ -74,8 +79,9 @@ pub fn decode<R: Read>(reader: &mut R) -> Result<RpcMessage, Box<Error>> {
             })
         }
         2 => {
-            let method = try_str!(arr[1], "method not found");
-            let params = try_arr!(arr[2], "params not found");
+            arr.truncate(3);
+            let params = try_arr!(arr.pop().unwrap(), "params not found"); // [2]
+            let method = try_str!(arr.pop().unwrap(), "method not found"); // [1]
             Ok(RpcMessage::RpcNotification {
                 method: method,
                 params: params,
