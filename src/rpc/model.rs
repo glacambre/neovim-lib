@@ -135,8 +135,8 @@ impl FromVal<Value> for Vec<(Value, Value)> {
 impl<T: FromVal<Value>> FromVal<Value> for Vec<T> {
     fn from_val(val: Value) -> Self {
         if let Value::Array(arr) = val {
-            return arr.iter()
-                .map(|v| T::from_val(v.clone()))
+            return arr.into_iter()
+                .map(|v| T::from_val(v))
                 .collect();
         }
         panic!("Can't convert to array");
@@ -187,7 +187,7 @@ impl<'a> IntoVal<Value> for &'a str {
 
 impl IntoVal<Value> for Vec<String> {
     fn into_val(self) -> Value {
-        let vec: Vec<Value> = self.iter().map(|v| Value::from(v.as_str())).collect();
+        let vec: Vec<Value> = self.into_iter().map(|v| Value::from(v)).collect();
         Value::from(vec)
     }
 }
