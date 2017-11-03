@@ -4,6 +4,7 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
 use std::sync::{mpsc, Mutex, Arc};
+use std::error::Error;
 
 use super::handler::{DefaultHandler, Handler};
 use rmpv::Value;
@@ -135,6 +136,14 @@ impl<R, W> Client<R, W>
         receiver.recv().unwrap()
     }
 
+    fn send_error_to_callers(queue: Queue, err: Box<Error>) {
+        let mut queue = queue.lock().unwrap();
+        for sender in queue.values() {
+            sender.send(Err(Value::from(format!("Error read response: {}", err)))).unwrap();
+        }
+        queue.clear();
+    }
+
     fn dispatch_thread<H>(queue: Queue,
                           mut reader: R,
                           writer: Arc<Mutex<W>>,
@@ -146,7 +155,8 @@ impl<R, W> Client<R, W>
             let msg = match model::decode(&mut reader) {
                 Ok(msg) => msg,
                 Err(e) => {
-                    error!("Error reading {}", e);
+                    error!("Error while reading: {}", e);
+                    Self::send_error_to_callers(queue, e);
                     return;
                 }
             };
