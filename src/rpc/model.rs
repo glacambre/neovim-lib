@@ -6,7 +6,7 @@ use std::io;
 use std::io::{Read, Write};
 use std::error::Error;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum RpcMessage {
     RpcRequest {
         msgid: u64,
@@ -65,17 +65,20 @@ pub fn decode<R: Read>(reader: &mut R) -> Result<RpcMessage, Box<Error>> {
             let msgid = try_int!(arr.pop().unwrap(), "msgid not found"); // [1]
 
             Ok(RpcMessage::RpcRequest {
-                msgid: msgid,
-                method: method,
-                params: params,
+                msgid,
+                method,
+                params,
             })
         }
         1 => {
+            arr.truncate(4);
             let msgid = try_int!(arr[1], "msgid not found");
+            let result = arr.pop().unwrap(); // [3]
+            let error = arr.pop().unwrap(); // [2]
             Ok(RpcMessage::RpcResponse {
-                msgid: msgid,
-                error: arr[2].to_owned(),
-                result: arr[3].to_owned(),
+                msgid,
+                error,
+                result,
             })
         }
         2 => {
@@ -83,8 +86,8 @@ pub fn decode<R: Read>(reader: &mut R) -> Result<RpcMessage, Box<Error>> {
             let params = try_arr!(arr.pop().unwrap(), "params not found"); // [2]
             let method = try_str!(arr.pop().unwrap(), "method not found"); // [1]
             Ok(RpcMessage::RpcNotification {
-                method: method,
-                params: params,
+                method,
+                params,
             })
 
         }
@@ -92,18 +95,18 @@ pub fn decode<R: Read>(reader: &mut R) -> Result<RpcMessage, Box<Error>> {
     }
 }
 
-pub fn encode<W: Write>(writer: &mut W, msg: &RpcMessage) -> Result<(), Box<Error>> {
+pub fn encode<W: Write>(writer: &mut W, msg: RpcMessage) -> Result<(), Box<Error>> {
     match msg {
-        &RpcMessage::RpcRequest { msgid, ref method, ref params } => {
-            let val = rpc_args!(0, msgid, method.to_owned(), params.to_owned());
+        RpcMessage::RpcRequest { msgid, method, params } => {
+            let val = rpc_args!(0, msgid, method, params);
             write_value(writer, &val)?;
         }
-        &RpcMessage::RpcResponse { msgid, ref error, ref result } => {
-            let val = rpc_args!(1, msgid, error.to_owned(), result.to_owned());
+        RpcMessage::RpcResponse { msgid, error, result } => {
+            let val = rpc_args!(1, msgid, error, result);
             write_value(writer, &val)?;
         }
-        &RpcMessage::RpcNotification { ref method, ref params } => {
-            let val = rpc_args!(2, method.to_owned(), params.to_owned());
+        RpcMessage::RpcNotification { method, params } => {
+            let val = rpc_args!(2, method, params);
             write_value(writer, &val)?;
         }
     };
@@ -248,7 +251,7 @@ mod test {
         };
 
         let mut buff = Cursor::new(vec![]);
-        encode(&mut buff, &msg).unwrap();
+        encode(&mut buff, msg.clone()).unwrap();
 
         buff.seek(SeekFrom::Start(0)).unwrap();
         let msg_dest = decode(&mut buff).unwrap();

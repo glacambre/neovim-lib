@@ -25,7 +25,7 @@ impl {{ etype.name }} {
     /// since: {{f.since}}
     pub fn {{f.name|replace(etype.prefix, '')}}(&self, neovim: &mut Neovim, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, CallError> {
         neovim.session.call("{{f.name}}",
-                          &call_args![self.code_data.clone()
+                          call_args![self.code_data.clone()
                           {% if f.parameters|count > 0 %}
                           , {{ f.parameters|map(attribute = "name")|join(", ") }}
                           {% endif %}
@@ -63,7 +63,7 @@ impl NeovimApi for Neovim {
     {% for f in functions if not f.ext %}
     fn {{f.name|replace('nvim_', '')}}(&mut self, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, CallError> {
         self.session.call("{{f.name}}",
-                          &call_args![{{ f.parameters|map(attribute = "name")|join(", ") }}])
+                          call_args![{{ f.parameters|map(attribute = "name")|join(", ") }}])
                     .map(map_result)
                     .map_err(map_generic_error)
     }

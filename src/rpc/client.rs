@@ -64,7 +64,7 @@ impl<R, W> Client<R, W>
 
     pub fn call_timeout(&mut self,
                         method: &str,
-                        args: &Vec<Value>,
+                        args: Vec<Value>,
                         dur: Duration)
                         -> Result<Value, Value> {
         if !self.event_loop_started {
@@ -94,7 +94,7 @@ impl<R, W> Client<R, W>
 
     fn send_msg(&mut self,
                 method: &str,
-                args: &Vec<Value>)
+                args: Vec<Value>)
                 -> mpsc::Receiver<Result<Value, Value>> {
         let msgid = self.msgid_counter;
         self.msgid_counter += 1;
@@ -102,21 +102,21 @@ impl<R, W> Client<R, W>
         let req = model::RpcMessage::RpcRequest {
             msgid: msgid,
             method: method.to_owned(),
-            params: args.clone(),
+            params: args,
         };
 
         let (sender, receiver) = mpsc::channel();
         self.queue.lock().unwrap().insert(msgid, sender);
 
         let ref mut writer = *self.writer.lock().unwrap();
-        model::encode(writer, &req).expect("Error sending message");
+        model::encode(writer, req).expect("Error sending message");
 
         receiver
     }
 
     pub fn call(&mut self,
                 method: &str,
-                args: &Vec<Value>,
+                args: Vec<Value>,
                 dur: Option<Duration>)
                 -> Result<Value, Value> {
         match dur {
@@ -125,7 +125,7 @@ impl<R, W> Client<R, W>
         }
     }
 
-    pub fn call_inf(&mut self, method: &str, args: &Vec<Value>) -> Result<Value, Value> {
+    pub fn call_inf(&mut self, method: &str, args: Vec<Value>) -> Result<Value, Value> {
         if !self.event_loop_started {
             return Err(Value::from("Event loop not started"));
         }
@@ -146,7 +146,7 @@ impl<R, W> Client<R, W>
             let msg = match model::decode(&mut reader) {
                 Ok(msg) => msg,
                 Err(e) => {
-                    debug!("Error reading {}", e);
+                    error!("Error reading {}", e);
                     return;
                 }
             };
@@ -171,7 +171,7 @@ impl<R, W> Client<R, W>
                     };
 
                     let ref mut writer = *writer.lock().unwrap();
-                    model::encode(writer, &response).expect("Error sending RPC response");
+                    model::encode(writer, response).expect("Error sending RPC response");
                 }
                 model::RpcMessage::RpcResponse { msgid, result, error } => {
                     let sender = queue.lock().unwrap().remove(&msgid).unwrap();

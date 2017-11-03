@@ -24,7 +24,8 @@ pub struct Session {
 
 macro_rules! call_args {
     () => (Vec::new());
-    ($($e:expr), *) => {{
+    ($($e:expr), +,) => (call_args![$($e),*]);
+    ($($e:expr), +) => {{
         let mut vec = Vec::new();
         $(
             vec.push($e.into_val());
@@ -138,7 +139,7 @@ impl Session {
     }
 
     /// Sync call. Call can be made only after event loop begin processing
-    pub fn call(&mut self, method: &str, args: &Vec<Value>) -> result::Result<Value, Value> {
+    pub fn call(&mut self, method: &str, args: Vec<Value>) -> result::Result<Value, Value> {
         match self.client {
             ClientConnection::Child(ref mut client, _) => client.call(method, args, self.timeout),
             ClientConnection::Parent(ref mut client) => client.call(method, args, self.timeout),

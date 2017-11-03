@@ -130,7 +130,7 @@ impl Neovim {
                      -> Result<(), CallError> {
         self.session
             .call("nvim_ui_attach",
-                  &call_args!(width, height, opts.to_value_map()))
+                  call_args!(width, height, opts.to_value_map()))
             .map_err(map_generic_error)
             .map(|_| ())
     }
