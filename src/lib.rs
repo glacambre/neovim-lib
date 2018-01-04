@@ -3,9 +3,9 @@
 //! Implements support for rust plugins for [Neovim](https://github.com/neovim/neovim) through its msgpack-rpc API.
 //! # Examples
 //! ```no_run
-//! use neovim_lib::{Neovim, NeovimApi, Session};
+//! use neovim_lib::{Neovim, NeovimApi, SessionBuilder};
 //!
-//! let mut session = Session::new_tcp("127.0.0.1:6666").unwrap();
+//! let mut session = SessionBuilder::new_tcp("127.0.0.1:6666").unwrap().get();
 //! session.start_event_loop();
 //! let mut nvim = Neovim::new(session);
 //!
@@ -31,7 +31,7 @@ pub mod neovim_api;
 
 pub use neovim::{Neovim, UiAttachOptions, UiOption, CallError};
 pub use neovim_api::NeovimApi;
-pub use session::Session;
+pub use session::{Session, SessionBuilder};
 
 pub use rpc::handler::{Handler};
-pub use rmpv::{Value, Integer};
+pub use rmpv::{Value, Integer, Utf8String};

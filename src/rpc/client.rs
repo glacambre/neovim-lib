@@ -1,7 +1,6 @@
 use std::io::{Read, Write};
 use std::thread;
 use std::thread::JoinHandle;
-use std::time::{Duration, Instant};
 use std::collections::HashMap;
 use std::sync::{mpsc, Mutex, Arc};
 use std::error::Error;
@@ -63,34 +62,16 @@ impl<R, W> Client<R, W>
         }
     }
 
-    pub fn call_timeout(&mut self,
+    pub fn call(&mut self,
                         method: &str,
                         args: Vec<Value>,
-                        dur: Duration)
+                        receiver: &super::Receiver)
                         -> Result<Value, Value> {
         if !self.event_loop_started {
             return Err(Value::from("Event loop not started"));
         }
 
-        let instant = Instant::now();
-        let delay = Duration::from_millis(1);
-
-        let receiver = self.send_msg(method, args);
-
-        loop {
-            match receiver.try_recv() {
-                Err(mpsc::TryRecvError::Empty) => {
-                    thread::sleep(delay);
-                    if instant.elapsed() >= dur {
-                        return Err(Value::from("Wait timeout"));
-                    }
-                }
-                Err(mpsc::TryRecvError::Disconnected) => {
-                    return Err(Value::from("Channel disconnected"))
-                }
-                Ok(val) => return val,
-            };
-        }
+        receiver.receive(self.send_msg(method, args))
     }
 
     fn send_msg(&mut self,
@@ -113,27 +94,6 @@ impl<R, W> Client<R, W>
         model::encode(writer, req).expect("Error sending message");
 
         receiver
-    }
-
-    pub fn call(&mut self,
-                method: &str,
-                args: Vec<Value>,
-                dur: Option<Duration>)
-                -> Result<Value, Value> {
-        match dur {
-            Some(dur) => self.call_timeout(method, args, dur),
-            None => self.call_inf(method, args),
-        }
-    }
-
-    pub fn call_inf(&mut self, method: &str, args: Vec<Value>) -> Result<Value, Value> {
-        if !self.event_loop_started {
-            return Err(Value::from("Event loop not started"));
-        }
-
-        let receiver = self.send_msg(method, args);
-
-        receiver.recv().unwrap()
     }
 
     fn send_error_to_callers(queue: Queue, err: Box<Error>) {

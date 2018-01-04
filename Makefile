@@ -7,6 +7,9 @@ test-out:
 generate:
 	python bindings/generate_bindings.py nvim src
 
+show-api:
+	python bindings/generate_bindings.py nvim
+
 doc:
 	cargo doc --no-deps --release
 

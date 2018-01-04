@@ -23,7 +23,7 @@ impl {{ etype.name }} {
 
     {% for f in functions if f.ext and f.name.startswith(etype.prefix) %}
     /// since: {{f.since}}
-    pub fn {{f.name|replace(etype.prefix, '')}}(&self, neovim: &mut Neovim, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, CallError> {
+    pub fn {{f.name|replace(etype.prefix, '')}}<R: Receiver>(&self, neovim: &mut Neovim<R>, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, CallError> {
         neovim.session.call("{{f.name}}",
                           call_args![self.code_data.clone()
                           {% if f.parameters|count > 0 %}
@@ -59,7 +59,7 @@ pub trait NeovimApi {
     {% endfor %}
 }
 
-impl NeovimApi for Neovim {
+impl <R: Receiver> NeovimApi for Neovim <R> {
     {% for f in functions if not f.ext %}
     fn {{f.name|replace('nvim_', '')}}(&mut self, {{f.argstring}}) -> Result<{{f.return_type.native_type_ret}}, CallError> {
         self.session.call("{{f.name}}",

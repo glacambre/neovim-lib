@@ -1,12 +1,13 @@
+use std::fmt;
+use std::error::Error;
+
 use session::Session;
 use rpc::*;
 use rmpv::Value;
 use neovim_api::NeovimApi;
-use std::fmt;
-use std::error::Error;
 
-pub struct Neovim {
-    pub session: Session,
+pub struct Neovim<R: Receiver> {
+    pub session: Session<R>,
 }
 
 pub enum UiOption {
@@ -138,8 +139,8 @@ pub fn map_result<T: FromVal<Value>>(val: Value) -> T {
     T::from_val(val)
 }
 
-impl Neovim {
-    pub fn new(session: Session) -> Neovim {
+impl<R: Receiver> Neovim<R> {
+    pub fn new(session: Session<R>) -> Self {
         Neovim { session: session }
     }
 
