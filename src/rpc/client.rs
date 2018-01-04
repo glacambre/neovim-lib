@@ -1,7 +1,6 @@
 use std::io::{Read, Write};
 use std::thread;
 use std::thread::JoinHandle;
-use std::collections::HashMap;
 use std::sync::{mpsc, Mutex, Arc};
 use std::error::Error;
 
@@ -10,7 +9,7 @@ use rmpv::Value;
 
 use super::model;
 
-type Queue = Arc<Mutex<HashMap<u64, mpsc::Sender<Result<Value, Value>>>>>;
+type Queue = Arc<Mutex<Vec<(u64, mpsc::Sender<Result<Value, Value>>)>>>;
 
 pub struct Client<R, W>
     where R: Read + Send + 'static,
@@ -51,7 +50,7 @@ impl<R, W> Client<R, W>
     }
 
     pub fn new(reader: R, writer: W) -> Self {
-        let queue = Arc::new(Mutex::new(HashMap::new()));
+        let queue = Arc::new(Mutex::new(Vec::new()));
         Client {
             reader: Some(reader),
             writer: Arc::new(Mutex::new(writer)),
@@ -88,7 +87,7 @@ impl<R, W> Client<R, W>
         };
 
         let (sender, receiver) = mpsc::channel();
-        self.queue.lock().unwrap().insert(msgid, sender);
+        self.queue.lock().unwrap().push((msgid, sender));
 
         let ref mut writer = *self.writer.lock().unwrap();
         model::encode(writer, req).expect("Error sending message");
@@ -98,8 +97,8 @@ impl<R, W> Client<R, W>
 
     fn send_error_to_callers(queue: Queue, err: Box<Error>) {
         let mut queue = queue.lock().unwrap();
-        for sender in queue.values() {
-            sender.send(Err(Value::from(format!("Error read response: {}", err)))).unwrap();
+        for sender in queue.iter() {
+            sender.1.send(Err(Value::from(format!("Error read response: {}", err)))).unwrap();
         }
         queue.clear();
     }
@@ -144,7 +143,7 @@ impl<R, W> Client<R, W>
                     model::encode(writer, response).expect("Error sending RPC response");
                 }
                 model::RpcMessage::RpcResponse { msgid, result, error } => {
-                    let sender = queue.lock().unwrap().remove(&msgid).unwrap();
+                    let sender = find_sender(&queue, msgid);
                     if error != Value::Nil {
                         sender.send(Err(error)).unwrap();
                     }
@@ -155,5 +154,46 @@ impl<R, W> Client<R, W>
                 }
             };
         })
+    }
+}
+
+/* The idea to use Vec here instead of HashMap
+ * is that Vec is faster on small queue sizes
+ * in most cases Vec.len = 1 so we just take first item in iteration.
+ */
+fn find_sender(queue: &Queue, msgid: u64) -> mpsc::Sender<Result<Value, Value>> {
+    let mut queue = queue.lock().unwrap();
+
+    let pos = queue.iter().position(|req| req.0 == msgid).unwrap();
+    queue.remove(pos).1
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_find_sender() {
+        let queue = Arc::new(Mutex::new(Vec::new()));
+
+        {
+            let (sender, _receiver) = mpsc::channel();
+            queue.lock().unwrap().push((1, sender));
+        }
+        {
+            let (sender, _receiver) = mpsc::channel();
+            queue.lock().unwrap().push((2, sender));
+        }
+        {
+            let (sender, _receiver) = mpsc::channel();
+            queue.lock().unwrap().push((3, sender));
+        }
+
+        find_sender(&queue, 1);
+        assert_eq!(2, queue.lock().unwrap().len());
+        find_sender(&queue, 2);
+        assert_eq!(1, queue.lock().unwrap().len());
+        find_sender(&queue, 3);
+        assert!(queue.lock().unwrap().is_empty());
     }
 }
