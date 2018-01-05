@@ -10,11 +10,21 @@ use rmpv::Value;
 
 use super::model;
 
+type Callback = Box<FnMut(Result<Value, Value>) + Send + 'static>;
 type Queue = Arc<Mutex<Vec<(u64, Sender)>>>;
 
 enum Sender {
     Sync(mpsc::Sender<Result<Value, Value>>),
-    Async(Option<Box<FnOnce(Result<Value, Value>) + Send + 'static>>),
+    Async(Callback),
+}
+
+impl Sender {
+    fn send(self, res: Result<Value, Value>) {
+        match self {
+            Sender::Sync(sender) => sender.send(res).unwrap(),
+            Sender::Async(mut cb) => cb(res),
+        };
+    }
 }
 
 pub struct Client<R, W>
@@ -70,8 +80,17 @@ impl<R, W> Client<R, W>
     pub fn call_async(&mut self,
                         method: String,
                         args: Vec<Value>,
-                        cb: Option<Box<FnOnce(Result<Value, Value>) + Send + 'static>>) {
-        
+                        cb: Option<Callback>) {
+        if !self.event_loop_started {
+            if let Some(mut cb) = cb {
+                cb(Err(Value::from("Event loop not started")));
+            } else {
+                error!("Event loop not started");
+            }
+            return;
+        }
+
+        self.send_msg_async(method, args, cb);
     }
 
     pub fn call_timeout(&mut self,
@@ -104,6 +123,27 @@ impl<R, W> Client<R, W>
         }
     }
 
+    fn send_msg_async(&mut self,
+                method: String,
+                params: Vec<Value>,
+                cb: Option<Callback>) {
+        let msgid = self.msgid_counter;
+        self.msgid_counter += 1;
+
+        let req = model::RpcMessage::RpcRequest {
+            msgid,
+            method,
+            params,
+        };
+
+        if let Some(cb) = cb {
+            self.queue.lock().unwrap().push((msgid, Sender::Async(cb)));
+        }
+
+        let ref mut writer = *self.writer.lock().unwrap();
+        model::encode(writer, req).expect("Error sending message");
+    }
+
     fn send_msg(&mut self,
                 method: &str,
                 args: Vec<Value>)
@@ -118,7 +158,7 @@ impl<R, W> Client<R, W>
         };
 
         let (sender, receiver) = mpsc::channel();
-        self.queue.lock().unwrap().push((msgid, sender));
+        self.queue.lock().unwrap().push((msgid, Sender::Sync(sender)));
 
         let ref mut writer = *self.writer.lock().unwrap();
         model::encode(writer, req).expect("Error sending message");
@@ -149,10 +189,7 @@ impl<R, W> Client<R, W>
 
     fn send_error_to_callers(queue: Queue, err: Box<Error>) {
         let mut queue = queue.lock().unwrap();
-        for sender in queue.iter() {
-            sender.1.send(Err(Value::from(format!("Error read response: {}", err)))).unwrap();
-        }
-        queue.clear();
+        queue.drain(0..).for_each(|sender| sender.1.send(Err(Value::from(format!("Error read response: {}", err)))));
     }
 
     fn dispatch_thread<H>(queue: Queue,
@@ -197,9 +234,10 @@ impl<R, W> Client<R, W>
                 model::RpcMessage::RpcResponse { msgid, result, error } => {
                     let sender = find_sender(&queue, msgid);
                     if error != Value::Nil {
-                        sender.send(Err(error)).unwrap();
+                        sender.send(Err(error));
+                    } else {
+                        sender.send(Ok(result));
                     }
-                    sender.send(Ok(result)).unwrap();
                 }
                 model::RpcMessage::RpcNotification { method, params } => {
                     handler.handle_notify(&method, params);
@@ -213,7 +251,7 @@ impl<R, W> Client<R, W>
  * is that Vec is faster on small queue sizes
  * in most cases Vec.len = 1 so we just take first item in iteration.
  */
-fn find_sender(queue: &Queue, msgid: u64) -> mpsc::Sender<Result<Value, Value>> {
+fn find_sender(queue: &Queue, msgid: u64) -> Sender {
     let mut queue = queue.lock().unwrap();
 
     let pos = queue.iter().position(|req| req.0 == msgid).unwrap();

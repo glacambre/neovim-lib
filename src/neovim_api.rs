@@ -1,4 +1,4 @@
-// Auto generated 2017-11-09 12:30:37.982000
+// Auto generated 2018-01-05 14:39:57.068000
 
 use neovim::*;
 use rpc::*;

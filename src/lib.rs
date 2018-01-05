@@ -29,9 +29,12 @@ pub mod session;
 pub mod async;
 pub mod neovim;
 pub mod neovim_api;
+pub mod neovim_api_async;
 
 pub use neovim::{Neovim, UiAttachOptions, UiOption, CallError};
 pub use neovim_api::NeovimApi;
+pub use neovim_api_async::NeovimApiAsync;
+pub use async::AsyncCall;
 pub use session::Session;
 
 pub use rpc::handler::{Handler};

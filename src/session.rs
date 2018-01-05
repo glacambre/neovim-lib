@@ -11,10 +11,14 @@ use std::path::Path;
 #[cfg(unix)]
 use unix_socket::UnixStream;
 
+use rpc;
 use rpc::handler::Handler;
+use rpc::Client;
+
+use async::AsyncCall;
+
 use rmpv::Value;
 
-use rpc::Client;
 
 /// An active Neovim session.
 pub struct Session {
@@ -148,6 +152,11 @@ impl Session {
             #[cfg(unix)]
             ClientConnection::UnixSocket(ref mut client) => client.call(method, args, self.timeout),
         }
+    }
+
+    /// Create async call will be executed when only after call() function.
+    pub fn call_async<R: rpc::FromVal<Value>>(&mut self, method: &str, args: Vec<Value>) -> AsyncCall<R> {
+        AsyncCall::new(&mut self.client, method.to_owned(), args)
     }
 
     /// Wait dispatch thread to finish.
