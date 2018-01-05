@@ -268,15 +268,15 @@ mod tests {
 
         {
             let (sender, _receiver) = mpsc::channel();
-            queue.lock().unwrap().push((1, sender));
+            queue.lock().unwrap().push((1, Sender::Sync(sender)));
         }
         {
             let (sender, _receiver) = mpsc::channel();
-            queue.lock().unwrap().push((2, sender));
+            queue.lock().unwrap().push((2, Sender::Sync(sender)));
         }
         {
             let (sender, _receiver) = mpsc::channel();
-            queue.lock().unwrap().push((3, sender));
+            queue.lock().unwrap().push((3, Sender::Sync(sender)));
         }
 
         find_sender(&queue, 1);
