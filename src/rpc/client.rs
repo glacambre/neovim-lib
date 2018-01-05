@@ -112,11 +112,11 @@ impl<R, W> Client<R, W>
                 Err(mpsc::TryRecvError::Empty) => {
                     thread::sleep(delay);
                     if instant.elapsed() >= dur {
-                        return Err(Value::from("Wait timeout"));
+                        return Err(Value::from(format!("Wait timeout ({})", method)));
                     }
                 }
                 Err(mpsc::TryRecvError::Disconnected) => {
-                    return Err(Value::from("Channel disconnected"))
+                    return Err(Value::from(format!("Channel disconnected ({})", method)))
                 }
                 Ok(val) => return val,
             };
