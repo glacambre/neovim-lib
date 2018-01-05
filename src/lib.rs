@@ -26,6 +26,7 @@ extern crate unix_socket;
 mod rpc;
 #[macro_use]
 pub mod session;
+pub mod async;
 pub mod neovim;
 pub mod neovim_api;
 

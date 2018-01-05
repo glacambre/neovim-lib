@@ -165,7 +165,7 @@ impl Session {
     }
 }
 
-enum ClientConnection {
+pub enum ClientConnection {
     Child(Client<ChildStdout, ChildStdin>, Child),
     Parent(Client<Stdin, Stdout>),
     Tcp(Client<TcpStream, TcpStream>),

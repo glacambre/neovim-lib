@@ -10,7 +10,12 @@ use rmpv::Value;
 
 use super::model;
 
-type Queue = Arc<Mutex<Vec<(u64, mpsc::Sender<Result<Value, Value>>)>>>;
+type Queue = Arc<Mutex<Vec<(u64, Sender)>>>;
+
+enum Sender {
+    Sync(mpsc::Sender<Result<Value, Value>>),
+    Async(Option<Box<FnOnce(Result<Value, Value>) + Send + 'static>>),
+}
 
 pub struct Client<R, W>
     where R: Read + Send + 'static,
@@ -60,6 +65,13 @@ impl<R, W> Client<R, W>
             dispatch_guard: None,
             event_loop_started: false,
         }
+    }
+
+    pub fn call_async(&mut self,
+                        method: String,
+                        args: Vec<Value>,
+                        cb: Option<Box<FnOnce(Result<Value, Value>) + Send + 'static>>) {
+        
     }
 
     pub fn call_timeout(&mut self,
