@@ -2,7 +2,7 @@ extern crate neovim_lib;
 extern crate rmp;
 extern crate tempdir;
 
-use neovim_lib::session::SessionBuilder;
+use neovim_lib::session::Session;
 use neovim_lib::neovim::Neovim;
 use neovim_lib::neovim_api::NeovimApi;
 
@@ -15,11 +15,9 @@ use tempdir::TempDir;
 #[test]
 fn start_stop_test() {
     let mut session = if cfg!(target_os = "windows") {
-        SessionBuilder::new_child_path("E:\\Neovim\\bin\\nvim.exe")
-            .unwrap()
-            .get()
+        Session::new_child_path("E:\\Neovim\\bin\\nvim.exe").unwrap()
     } else {
-        SessionBuilder::new_child().unwrap().get()
+        Session::new_child().unwrap()
     };
 
     session.start_event_loop();
@@ -31,7 +29,7 @@ fn start_stop_test() {
 #[ignore]
 #[test]
 fn remote_test() {
-    let mut session = SessionBuilder::new_tcp("127.0.0.1:6666").unwrap().get();
+    let mut session = Session::new_tcp("127.0.0.1:6666").unwrap();
     session.start_event_loop();
     let mut nvim = Neovim::new(session);
     nvim.command("echo \"Test\"").unwrap();
@@ -40,13 +38,11 @@ fn remote_test() {
 #[ignore]
 #[test]
 fn edit_test() {
-    let mut session = SessionBuilder::new_tcp("127.0.0.1:6666").unwrap().get();
+    let mut session = Session::new_tcp("127.0.0.1:6666").unwrap();
     session.start_event_loop();
     let mut nvim = Neovim::new(session);
     let buffers = nvim.list_bufs().unwrap();
-    buffers[0]
-        .set_lines(&mut nvim, 0, 0, true, vec!["replace first line".to_owned()])
-        .unwrap();
+    buffers[0].set_lines(&mut nvim, 0, 0, true, vec!["replace first line".to_owned()]).unwrap();
     nvim.command("vsplit").unwrap();
     let windows = nvim.list_wins().unwrap();
     windows[0].set_width(&mut nvim, 10).unwrap();
@@ -88,38 +84,30 @@ fn can_connect_via_unix_socket() {
     }
 
 
-    let mut session = SessionBuilder::new_unix_socket(&socket_path)
-        .expect(&format!(
-            "Unable to connect to neovim's unix socket at {:?}",
-            &socket_path
-        ))
-        .get();
+    let mut session = Session::new_unix_socket(&socket_path)
+        .expect(&format!("Unable to connect to neovim's unix socket at {:?}",
+                         &socket_path));
 
     session.start_event_loop();
 
     let mut nvim = Neovim::new(session);
 
-    let servername = nvim.get_vvar("servername").expect(
-        "Error retrieving servername from neovim over unix socket",
-    );
+    let servername = nvim.get_vvar("servername")
+        .expect("Error retrieving servername from neovim over unix socket");
 
     // let's make sure the servername string and socket path string both match.
     match servername.as_str() {
         Some(ref name) => {
             if Path::new(name) != socket_path {
-                panic!(format!(
-                    "Server name does not match socket path! {} != {}",
-                    name,
-                    socket_path.to_str().unwrap()
-                ));
+                panic!(format!("Server name does not match socket path! {} != {}",
+                               name,
+                               socket_path.to_str().unwrap()));
             }
         }
         None => {
-            panic!(format!(
-                "Server name does not match socket path! {:?} != {}",
-                servername,
-                socket_path.to_str().unwrap()
-            ))
+            panic!(format!("Server name does not match socket path! {:?} != {}",
+                           servername,
+                           socket_path.to_str().unwrap()))
         }
     }
 }
