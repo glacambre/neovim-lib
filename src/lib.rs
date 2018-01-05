@@ -34,4 +34,4 @@ pub use neovim_api::NeovimApi;
 pub use session::Session;
 
 pub use rpc::handler::{Handler};
-pub use rmpv::{Value, Integer};
+pub use rmpv::{Value, Integer, Utf8String};
