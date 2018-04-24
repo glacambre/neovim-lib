@@ -62,7 +62,7 @@ impl Session {
 
     /// Connect to a Neovim instance by spawning a new one.
     pub fn new_child() -> Result<Session> {
-        if cfg!(target_os = "linux") || cfg!(target_os = "freebsd") {
+        if cfg!(target_os = "linux") || cfg!(target_os = "freebsd") || cfg!(target_os = "macos") {
             Self::new_child_path("nvim")
         } else {
             Self::new_child_path("nvim.exe")
