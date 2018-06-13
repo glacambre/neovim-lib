@@ -237,6 +237,12 @@ impl IntoVal<Value> for Value {
     }
 }
 
+impl IntoVal<Value> for Vec<(Value, Value)> {
+    fn into_val(self) -> Value {
+        Value::from(self)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use std::io::{Cursor, SeekFrom, Seek};

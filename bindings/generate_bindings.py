@@ -40,7 +40,7 @@ def generate_file(name, outpath, **kw):
         fp.write(template.render(kw))
 
     subprocess.call(["rustfmt", os.path.join(outpath, name)])
-    os.remove(os.path.join(outpath, name + ".bk"))
+    # os.remove(os.path.join(outpath, name + ".bk"))
 
 class UnsupportedType(Exception): pass
 class NeovimTypeVal:
@@ -92,8 +92,16 @@ class NeovimTypeVal:
         if key == "native_type_arg":
             return self.native_type_arg
         if key == "name":
-            return self.name
+            return self._convert_arg_name(self.name)
         return None
+
+    def _convert_arg_name(self, key):
+        """Rust keyword must not be used as function arguments"""
+        if key == "fn":
+            return "fname"
+        if key == "type":
+            return "typ"
+        return key
 
     @classmethod
     def nativeTypeVal(cls, typename):
@@ -146,7 +154,7 @@ class Function:
             return
 
         # Build the argument string - makes it easier for the templates
-        self.argstring = ', '.join(['%s: %s' % (tv.name, tv.native_type_arg) for tv in self.parameters])
+        self.argstring = ', '.join(['%s: %s' % (tv["name"], tv.native_type_arg) for tv in self.parameters])
 
         # filter function, use only nvim one
         # nvim_ui_attach implemented manually
@@ -204,6 +212,22 @@ if __name__ == '__main__':
         sys.exit(-1)
 
     nvim = sys.argv[1]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     outpath = None if len(sys.argv) < 3 else sys.argv[2]
     try:
         api = get_api_info(sys.argv[1])
