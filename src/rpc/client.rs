@@ -1,4 +1,4 @@
-use std::io::{Read, Write};
+use std::io::{Read, Write, BufReader, BufWriter};
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
@@ -31,8 +31,8 @@ pub struct Client<R, W>
     where R: Read + Send + 'static,
           W: Write + Send + 'static
 {
-    reader: Option<R>,
-    writer: Arc<Mutex<W>>,
+    reader: Option<BufReader<R>>,
+    writer: Arc<Mutex<BufWriter<W>>>,
     dispatch_guard: Option<JoinHandle<()>>,
     event_loop_started: bool,
     queue: Queue,
@@ -68,8 +68,8 @@ impl<R, W> Client<R, W>
     pub fn new(reader: R, writer: W) -> Self {
         let queue = Arc::new(Mutex::new(Vec::new()));
         Client {
-            reader: Some(reader),
-            writer: Arc::new(Mutex::new(writer)),
+            reader: Some(BufReader::new(reader)),
+            writer: Arc::new(Mutex::new(BufWriter::new(writer))),
             msgid_counter: 0,
             queue: queue.clone(),
             dispatch_guard: None,
@@ -193,8 +193,8 @@ impl<R, W> Client<R, W>
     }
 
     fn dispatch_thread<H>(queue: Queue,
-                          mut reader: R,
-                          writer: Arc<Mutex<W>>,
+                          mut reader: BufReader<R>,
+                          writer: Arc<Mutex<BufWriter<W>>>,
                           mut handler: H)
                           -> JoinHandle<()>
         where H: Handler + Send + 'static
