@@ -83,12 +83,12 @@ impl UiAttachOptions {
         self
     }
 
-    pub fn set_newgrid(&mut self, newgrid_external: bool) -> &mut Self {
+    pub fn set_newgrid_external(&mut self, newgrid_external: bool) -> &mut Self {
         self.set_option(UiOption::ExtNewgrid(newgrid_external));
         self
     }
 
-    pub fn set_hlstate(&mut self, hlstate_external: bool) -> &mut Self {
+    pub fn set_hlstate_external(&mut self, hlstate_external: bool) -> &mut Self {
         self.set_option(UiOption::ExtHlstate(hlstate_external));
         self
     }
