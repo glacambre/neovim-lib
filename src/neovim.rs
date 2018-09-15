@@ -1,9 +1,9 @@
-use session::Session;
-use rpc::*;
-use rmpv::Value;
 use neovim_api::NeovimApi;
-use std::fmt;
+use rmpv::Value;
+use rpc::*;
+use session::Session;
 use std::error::Error;
+use std::fmt;
 
 pub struct Neovim {
     pub session: Session,
@@ -26,14 +26,14 @@ impl UiOption {
     }
 
     fn to_name_value(&self) -> (&'static str, Value) {
-        match self {
-            &UiOption::RGB(val) => ("rgb", val.into()),
-            &UiOption::ExtPopupmenu(val) => ("ext_popupmenu", val.into()),
-            &UiOption::ExtTabline(val) => ("ext_tabline", val.into()),
-            &UiOption::ExtCmdline(val) => ("ext_cmdline", val.into()),
-            &UiOption::ExtWildmenu(val) => ("ext_wildmenu", val.into()),
-            &UiOption::ExtNewgrid(val) => ("ext_newgrid", val.into()),
-            &UiOption::ExtHlstate(val) => ("ext_hlstate", val.into()),
+        match *self {
+            UiOption::RGB(val) => ("rgb", val.into()),
+            UiOption::ExtPopupmenu(val) => ("ext_popupmenu", val.into()),
+            UiOption::ExtTabline(val) => ("ext_tabline", val.into()),
+            UiOption::ExtCmdline(val) => ("ext_cmdline", val.into()),
+            UiOption::ExtWildmenu(val) => ("ext_wildmenu", val.into()),
+            UiOption::ExtNewgrid(val) => ("ext_newgrid", val.into()),
+            UiOption::ExtHlstate(val) => ("ext_hlstate", val.into()),
         }
     }
 }
@@ -44,7 +44,9 @@ pub struct UiAttachOptions {
 
 impl UiAttachOptions {
     pub fn new() -> UiAttachOptions {
-        UiAttachOptions { options: Vec::new() }
+        UiAttachOptions {
+            options: Vec::new(),
+        }
     }
 
     fn set_option(&mut self, option: UiOption) {
@@ -123,7 +125,6 @@ impl Error for CallError {
     }
 }
 
-
 #[doc(hidden)]
 pub fn map_generic_error(err: Value) -> CallError {
     match err {
@@ -131,12 +132,10 @@ pub fn map_generic_error(err: Value) -> CallError {
         Value::Array(arr) => {
             if arr.len() == 2 {
                 match (&arr[0], &arr[1]) {
-                    (&Value::Integer(ref id), &Value::String(ref val)) => {
-                        CallError::NeovimError(
-                            id.as_u64().unwrap(),
-                            val.as_str().unwrap().to_owned(),
-                        )
-                    }
+                    (&Value::Integer(ref id), &Value::String(ref val)) => CallError::NeovimError(
+                        id.as_u64().unwrap(),
+                        val.as_str().unwrap().to_owned(),
+                    ),
                     _ => CallError::GenericError(format!("{:?}", arr)),
                 }
             } else {
@@ -154,7 +153,7 @@ pub fn map_result<T: FromVal<Value>>(val: Value) -> T {
 
 impl Neovim {
     pub fn new(session: Session) -> Neovim {
-        Neovim { session: session }
+        Neovim { session }
     }
 
     /// Register as a remote UI.
@@ -170,8 +169,7 @@ impl Neovim {
             .call(
                 "nvim_ui_attach",
                 call_args!(width, height, opts.to_value_map()),
-            )
-            .map_err(map_generic_error)
+            ).map_err(map_generic_error)
             .map(|_| ())
     }
 

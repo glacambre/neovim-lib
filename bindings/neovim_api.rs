@@ -12,7 +12,7 @@ pub struct {{ etype.name }} {
 impl {{ etype.name }} {
     pub fn new(code_data: Value) -> {{ etype.name }} {
         {{ etype.name }} {
-            code_data: code_data,
+            code_data,
         }
     }
 

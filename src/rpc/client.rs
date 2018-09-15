@@ -1,9 +1,9 @@
-use std::io::{Read, Write, BufReader, BufWriter};
+use std::error::Error;
+use std::io::{BufReader, BufWriter, Read, Write};
+use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
-use std::sync::{mpsc, Mutex, Arc};
-use std::error::Error;
 
 use super::handler::{DefaultHandler, Handler};
 use rmpv::Value;
@@ -28,8 +28,9 @@ impl Sender {
 }
 
 pub struct Client<R, W>
-    where R: Read + Send + 'static,
-          W: Write + Send + 'static
+where
+    R: Read + Send + 'static,
+    W: Write + Send + 'static,
 {
     reader: Option<BufReader<R>>,
     writer: Arc<Mutex<BufWriter<W>>>,
@@ -40,28 +41,36 @@ pub struct Client<R, W>
 }
 
 impl<R, W> Client<R, W>
-    where R: Read + Send + 'static,
-          W: Write + Send + 'static
+where
+    R: Read + Send + 'static,
+    W: Write + Send + 'static,
 {
     pub fn take_dispatch_guard(&mut self) -> JoinHandle<()> {
-        self.dispatch_guard.take().expect("Can only take join handle after running event loop")
+        self.dispatch_guard
+            .take()
+            .expect("Can only take join handle after running event loop")
     }
 
     pub fn start_event_loop_handler<H>(&mut self, handler: H)
-        where H: Handler + Send + 'static
+    where
+        H: Handler + Send + 'static,
     {
-        self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(),
-                                                         self.reader.take().unwrap(),
-                                                         self.writer.clone(),
-                                                         handler));
+        self.dispatch_guard = Some(Self::dispatch_thread(
+            self.queue.clone(),
+            self.reader.take().unwrap(),
+            self.writer.clone(),
+            handler,
+        ));
         self.event_loop_started = true;
     }
 
     pub fn start_event_loop(&mut self) {
-        self.dispatch_guard = Some(Self::dispatch_thread(self.queue.clone(),
-                                                         self.reader.take().unwrap(),
-                                                         self.writer.clone(),
-                                                         DefaultHandler()));
+        self.dispatch_guard = Some(Self::dispatch_thread(
+            self.queue.clone(),
+            self.reader.take().unwrap(),
+            self.writer.clone(),
+            DefaultHandler(),
+        ));
         self.event_loop_started = true;
     }
 
@@ -77,10 +86,7 @@ impl<R, W> Client<R, W>
         }
     }
 
-    pub fn call_async(&mut self,
-                        method: String,
-                        args: Vec<Value>,
-                        cb: Option<Callback>) {
+    pub fn call_async(&mut self, method: String, args: Vec<Value>, cb: Option<Callback>) {
         if !self.event_loop_started {
             if let Some(mut cb) = cb {
                 cb(Err(Value::from("Event loop not started")));
@@ -93,11 +99,12 @@ impl<R, W> Client<R, W>
         self.send_msg_async(method, args, cb);
     }
 
-    pub fn call_timeout(&mut self,
-                        method: &str,
-                        args: Vec<Value>,
-                        dur: Duration)
-                        -> Result<Value, Value> {
+    pub fn call_timeout(
+        &mut self,
+        method: &str,
+        args: Vec<Value>,
+        dur: Duration,
+    ) -> Result<Value, Value> {
         if !self.event_loop_started {
             return Err(Value::from("Event loop not started"));
         }
@@ -123,10 +130,7 @@ impl<R, W> Client<R, W>
         }
     }
 
-    fn send_msg_async(&mut self,
-                method: String,
-                params: Vec<Value>,
-                cb: Option<Callback>) {
+    fn send_msg_async(&mut self, method: String, params: Vec<Value>, cb: Option<Callback>) {
         let msgid = self.msgid_counter;
         self.msgid_counter += 1;
 
@@ -140,37 +144,38 @@ impl<R, W> Client<R, W>
             self.queue.lock().unwrap().push((msgid, Sender::Async(cb)));
         }
 
-        let ref mut writer = *self.writer.lock().unwrap();
+        let writer = &mut *self.writer.lock().unwrap();
         model::encode(writer, req).expect("Error sending message");
     }
 
-    fn send_msg(&mut self,
-                method: &str,
-                args: Vec<Value>)
-                -> mpsc::Receiver<Result<Value, Value>> {
+    fn send_msg(&mut self, method: &str, args: Vec<Value>) -> mpsc::Receiver<Result<Value, Value>> {
         let msgid = self.msgid_counter;
         self.msgid_counter += 1;
 
         let req = model::RpcMessage::RpcRequest {
-            msgid: msgid,
+            msgid,
             method: method.to_owned(),
             params: args,
         };
 
         let (sender, receiver) = mpsc::channel();
-        self.queue.lock().unwrap().push((msgid, Sender::Sync(sender)));
+        self.queue
+            .lock()
+            .unwrap()
+            .push((msgid, Sender::Sync(sender)));
 
-        let ref mut writer = *self.writer.lock().unwrap();
+        let writer = &mut *self.writer.lock().unwrap();
         model::encode(writer, req).expect("Error sending message");
 
         receiver
     }
 
-    pub fn call(&mut self,
-                method: &str,
-                args: Vec<Value>,
-                dur: Option<Duration>)
-                -> Result<Value, Value> {
+    pub fn call(
+        &mut self,
+        method: &str,
+        args: Vec<Value>,
+        dur: Option<Duration>,
+    ) -> Result<Value, Value> {
         match dur {
             Some(dur) => self.call_timeout(method, args, dur),
             None => self.call_inf(method, args),
@@ -187,51 +192,61 @@ impl<R, W> Client<R, W>
         receiver.recv().unwrap()
     }
 
-    fn send_error_to_callers(queue: Queue, err: Box<Error>) {
+    fn send_error_to_callers(queue: &Queue, err: &Box<Error>) {
         let mut queue = queue.lock().unwrap();
-        queue.drain(0..).for_each(|sender| sender.1.send(Err(Value::from(format!("Error read response: {}", err)))));
+        queue.drain(0..).for_each(|sender| {
+            sender
+                .1
+                .send(Err(Value::from(format!("Error read response: {}", err))))
+        });
     }
 
-    fn dispatch_thread<H>(queue: Queue,
-                          mut reader: BufReader<R>,
-                          writer: Arc<Mutex<BufWriter<W>>>,
-                          mut handler: H)
-                          -> JoinHandle<()>
-        where H: Handler + Send + 'static
+    fn dispatch_thread<H>(
+        queue: Queue,
+        mut reader: BufReader<R>,
+        writer: Arc<Mutex<BufWriter<W>>>,
+        mut handler: H,
+    ) -> JoinHandle<()>
+    where
+        H: Handler + Send + 'static,
     {
         thread::spawn(move || loop {
             let msg = match model::decode(&mut reader) {
                 Ok(msg) => msg,
                 Err(e) => {
                     error!("Error while reading: {}", e);
-                    Self::send_error_to_callers(queue, e);
+                    Self::send_error_to_callers(&queue, &e);
                     return;
                 }
             };
             debug!("Get message {:?}", msg);
             match msg {
-                model::RpcMessage::RpcRequest { msgid, method, params } => {
+                model::RpcMessage::RpcRequest {
+                    msgid,
+                    method,
+                    params,
+                } => {
                     let response = match handler.handle_request(&method, params) {
-                        Ok(result) => {
-                            model::RpcMessage::RpcResponse {
-                                msgid: msgid,
-                                result: result,
-                                error: Value::Nil,
-                            }
-                        }
-                        Err(error) => {
-                            model::RpcMessage::RpcResponse {
-                                msgid: msgid,
-                                result: Value::Nil,
-                                error: error,
-                            }
-                        }
+                        Ok(result) => model::RpcMessage::RpcResponse {
+                            msgid,
+                            result,
+                            error: Value::Nil,
+                        },
+                        Err(error) => model::RpcMessage::RpcResponse {
+                            msgid,
+                            result: Value::Nil,
+                            error,
+                        },
                     };
 
-                    let ref mut writer = *writer.lock().unwrap();
+                    let writer = &mut *writer.lock().unwrap();
                     model::encode(writer, response).expect("Error sending RPC response");
                 }
-                model::RpcMessage::RpcResponse { msgid, result, error } => {
+                model::RpcMessage::RpcResponse {
+                    msgid,
+                    result,
+                    error,
+                } => {
                     let sender = find_sender(&queue, msgid);
                     if error != Value::Nil {
                         sender.send(Err(error));

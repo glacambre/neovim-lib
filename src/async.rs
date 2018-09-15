@@ -2,9 +2,9 @@ use std::marker::PhantomData;
 
 use rmpv::Value;
 
-use session::ClientConnection;
 use neovim;
 use rpc::model::FromVal;
+use session::ClientConnection;
 
 pub struct AsyncCall<'a, R: FromVal<Value>> {
     method: String,
@@ -32,9 +32,7 @@ impl<'a, R: FromVal<Value>> AsyncCall<'a, R> {
         let mut cb = Some(cb);
 
         self.cb = Some(Box::new(move |res| {
-            let res = res.map(|v| R::from_val(v)).map_err(
-                neovim::map_generic_error,
-            );
+            let res = res.map(R::from_val).map_err(neovim::map_generic_error);
             cb.take().unwrap()(res);
         }));
         self
@@ -42,19 +40,19 @@ impl<'a, R: FromVal<Value>> AsyncCall<'a, R> {
 
     /// Async call. Call can be made only after event loop begin processing
     pub fn call(self) {
-        match self.client {
-            &mut ClientConnection::Child(ref mut client, _) => {
+        match *self.client {
+            ClientConnection::Child(ref mut client, _) => {
                 client.call_async(self.method, self.args, self.cb)
             }
-            &mut ClientConnection::Parent(ref mut client) => {
+            ClientConnection::Parent(ref mut client) => {
                 client.call_async(self.method, self.args, self.cb)
             }
-            &mut ClientConnection::Tcp(ref mut client) => {
+            ClientConnection::Tcp(ref mut client) => {
                 client.call_async(self.method, self.args, self.cb)
             }
 
             #[cfg(unix)]
-            &mut ClientConnection::UnixSocket(ref mut client) => {
+            ClientConnection::UnixSocket(ref mut client) => {
                 client.call_async(self.method, self.args, self.cb)
             }
         };

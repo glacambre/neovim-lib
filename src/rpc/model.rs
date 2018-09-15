@@ -1,10 +1,9 @@
-
 use rmpv::decode::read_value;
 use rmpv::encode::write_value;
 use rmpv::Value;
+use std::error::Error;
 use std::io;
 use std::io::{Read, Write};
-use std::error::Error;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum RpcMessage {
@@ -18,31 +17,40 @@ pub enum RpcMessage {
         error: Value,
         result: Value,
     }, // 1
-    RpcNotification { method: String, params: Vec<Value> }, // 2
+    RpcNotification {
+        method: String,
+        params: Vec<Value>,
+    }, // 2
 }
 
 macro_rules! try_str {
-    ($exp:expr, $msg:expr) => (match $exp {
-        Value::String(val) => match val.into_str() {
-            Some(s) => s,
-            None => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg))),
-        },
-        _ => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg)))
-    })
+    ($exp:expr, $msg:expr) => {
+        match $exp {
+            Value::String(val) => match val.into_str() {
+                Some(s) => s,
+                None => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg))),
+            },
+            _ => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg))),
+        }
+    };
 }
 
 macro_rules! try_int {
-    ($exp:expr, $msg:expr) => (match $exp.as_u64() {
-        Some(val) => val,
-        _ => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg)))
-    })
+    ($exp:expr, $msg:expr) => {
+        match $exp.as_u64() {
+            Some(val) => val,
+            _ => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg))),
+        }
+    };
 }
 
 macro_rules! try_arr {
-    ($exp:expr, $msg:expr) => (match $exp {
-        Value::Array(arr) => arr,
-        _ => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg)))
-    })
+    ($exp:expr, $msg:expr) => {
+        match $exp {
+            Value::Array(arr) => arr,
+            _ => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg))),
+        }
+    };
 }
 
 macro_rules! rpc_args {
@@ -85,23 +93,30 @@ pub fn decode<R: Read>(reader: &mut R) -> Result<RpcMessage, Box<Error>> {
             arr.truncate(3);
             let params = try_arr!(arr.pop().unwrap(), "params not found"); // [2]
             let method = try_str!(arr.pop().unwrap(), "method not found"); // [1]
-            Ok(RpcMessage::RpcNotification {
-                method,
-                params,
-            })
-
+            Ok(RpcMessage::RpcNotification { method, params })
         }
-        _ => Err(Box::new(io::Error::new(io::ErrorKind::Other, "Not nown type"))),
+        _ => Err(Box::new(io::Error::new(
+            io::ErrorKind::Other,
+            "Not nown type",
+        ))),
     }
 }
 
 pub fn encode<W: Write>(writer: &mut W, msg: RpcMessage) -> Result<(), Box<Error>> {
     match msg {
-        RpcMessage::RpcRequest { msgid, method, params } => {
+        RpcMessage::RpcRequest {
+            msgid,
+            method,
+            params,
+        } => {
             let val = rpc_args!(0, msgid, method, params);
             write_value(writer, &val)?;
         }
-        RpcMessage::RpcResponse { msgid, error, result } => {
+        RpcMessage::RpcResponse {
+            msgid,
+            error,
+            result,
+        } => {
             let val = rpc_args!(1, msgid, error, result);
             write_value(writer, &val)?;
         }
@@ -144,9 +159,7 @@ impl FromVal<Value> for Vec<(Value, Value)> {
 impl<T: FromVal<Value>> FromVal<Value> for Vec<T> {
     fn from_val(val: Value) -> Self {
         if let Value::Array(arr) = val {
-            return arr.into_iter()
-                .map(|v| T::from_val(v))
-                .collect();
+            return arr.into_iter().map(T::from_val).collect();
         }
         panic!("Can't convert to array");
     }
@@ -154,12 +167,17 @@ impl<T: FromVal<Value>> FromVal<Value> for Vec<T> {
 
 impl FromVal<Value> for (u64, u64) {
     fn from_val(val: Value) -> Self {
-        let res = val.as_array().expect("Can't convert to point(u64,u64) value");
+        let res = val
+            .as_array()
+            .expect("Can't convert to point(u64,u64) value");
         if res.len() != 2 {
             panic!("Array length must be 2");
         }
-        return (res[0].as_u64().expect("Can't get u64 value at position 0"), 
-                res[1].as_u64().expect("Can't get u64 value at position 1"));
+
+        (
+            res[0].as_u64().expect("Can't get u64 value at position 0"),
+            res[1].as_u64().expect("Can't get u64 value at position 1"),
+        )
     }
 }
 
@@ -196,7 +214,7 @@ impl<'a> IntoVal<Value> for &'a str {
 
 impl IntoVal<Value> for Vec<String> {
     fn into_val(self) -> Value {
-        let vec: Vec<Value> = self.into_iter().map(|v| Value::from(v)).collect();
+        let vec: Vec<Value> = self.into_iter().map(Value::from).collect();
         Value::from(vec)
     }
 }
@@ -245,8 +263,8 @@ impl IntoVal<Value> for Vec<(Value, Value)> {
 
 #[cfg(test)]
 mod test {
-    use std::io::{Cursor, SeekFrom, Seek};
     use super::*;
+    use std::io::{Cursor, Seek, SeekFrom};
 
     #[test]
     fn request_test() {
