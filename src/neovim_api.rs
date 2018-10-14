@@ -73,8 +73,8 @@ impl Buffer {
     pub fn set_lines(
         &self,
         neovim: &mut Neovim,
-        start: u64,
-        end: u64,
+        start: i64,
+        end: i64,
         strict_indexing: bool,
         replacement: Vec<String>,
     ) -> Result<(), CallError> {

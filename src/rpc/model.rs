@@ -243,6 +243,12 @@ impl IntoVal<Value> for u64 {
     }
 }
 
+impl IntoVal<Value> for i64 {
+    fn into_val(self) -> Value {
+        Value::from(self)
+    }
+}
+
 impl IntoVal<Value> for String {
     fn into_val(self) -> Value {
         Value::from(self)
