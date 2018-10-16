@@ -50,9 +50,9 @@ class NeovimTypeVal:
     # msgpack simple types types
     SIMPLETYPES_REF = {
             'Array': 'Vec<Value>',
-            'ArrayOf(Integer, 2)': '(u64, u64)',
+            'ArrayOf(Integer, 2)': '(i64, i64)',
             'void': '()',
-            'Integer': 'u64',
+            'Integer': 'i64',
             'Boolean': 'bool',
             'String': '&str',
             'Object': 'Value',
@@ -61,9 +61,9 @@ class NeovimTypeVal:
 
     SIMPLETYPES_VAL = {
             'Array': 'Vec<Value>',
-            'ArrayOf(Integer, 2)': '(u64, u64)',
+            'ArrayOf(Integer, 2)': '(i64, i64)',
             'void': '()',
-            'Integer': 'u64',
+            'Integer': 'i64',
             'Boolean': 'bool',
             'String': 'String',
             'Object': 'Value',
