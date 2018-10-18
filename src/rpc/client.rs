@@ -11,7 +11,7 @@ use rmpv::Value;
 use super::model;
 
 type Callback = Box<FnMut(Result<Value, Value>) + Send + 'static>;
-type Queue = Arc<Mutex<Vec<(i64, Sender)>>>;
+type Queue = Arc<Mutex<Vec<(u64, Sender)>>>;
 
 enum Sender {
     Sync(mpsc::Sender<Result<Value, Value>>),
@@ -37,7 +37,7 @@ where
     dispatch_guard: Option<JoinHandle<()>>,
     event_loop_started: bool,
     queue: Queue,
-    msgid_counter: i64,
+    msgid_counter: u64,
 }
 
 impl<R, W> Client<R, W>
@@ -266,7 +266,7 @@ where
  * is that Vec is faster on small queue sizes
  * in most cases Vec.len = 1 so we just take first item in iteration.
  */
-fn find_sender(queue: &Queue, msgid: i64) -> Sender {
+fn find_sender(queue: &Queue, msgid: u64) -> Sender {
     let mut queue = queue.lock().unwrap();
 
     let pos = queue.iter().position(|req| req.0 == msgid).unwrap();

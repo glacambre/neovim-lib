@@ -8,12 +8,12 @@ use std::io::{Read, Write};
 #[derive(Debug, PartialEq, Clone)]
 pub enum RpcMessage {
     RpcRequest {
-        msgid: i64,
+        msgid: u64,
         method: String,
         params: Vec<Value>,
     }, // 0
     RpcResponse {
-        msgid: i64,
+        msgid: u64,
         error: Value,
         result: Value,
     }, // 1
@@ -37,7 +37,7 @@ macro_rules! try_str {
 
 macro_rules! try_int {
     ($exp:expr, $msg:expr) => {
-        match $exp.as_i64() {
+        match $exp.as_u64() {
             Some(val) => val,
             _ => return Err(Box::new(io::Error::new(io::ErrorKind::Other, $msg))),
         }
