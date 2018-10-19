@@ -165,18 +165,18 @@ impl<T: FromVal<Value>> FromVal<Value> for Vec<T> {
     }
 }
 
-impl FromVal<Value> for (u64, u64) {
+impl FromVal<Value> for (i64, i64) {
     fn from_val(val: Value) -> Self {
         let res = val
             .as_array()
-            .expect("Can't convert to point(u64,u64) value");
+            .expect("Can't convert to point(i64,i64) value");
         if res.len() != 2 {
             panic!("Array length must be 2");
         }
 
         (
-            res[0].as_u64().expect("Can't get u64 value at position 0"),
-            res[1].as_u64().expect("Can't get u64 value at position 1"),
+            res[0].as_i64().expect("Can't get i64 value at position 0"),
+            res[1].as_i64().expect("Can't get i64 value at position 1"),
         )
     }
 }
@@ -196,9 +196,9 @@ impl FromVal<Value> for String {
     }
 }
 
-impl FromVal<Value> for u64 {
+impl FromVal<Value> for i64 {
     fn from_val(val: Value) -> Self {
-        val.as_u64().expect("Can't convert to u64")
+        val.as_i64().expect("Can't convert to i64")
     }
 }
 
@@ -225,7 +225,7 @@ impl IntoVal<Value> for Vec<Value> {
     }
 }
 
-impl IntoVal<Value> for (u64, u64) {
+impl IntoVal<Value> for (i64, i64) {
     fn into_val(self) -> Value {
         Value::from(vec![Value::from(self.0), Value::from(self.1)])
     }
@@ -237,7 +237,7 @@ impl IntoVal<Value> for bool {
     }
 }
 
-impl IntoVal<Value> for u64 {
+impl IntoVal<Value> for i64 {
     fn into_val(self) -> Value {
         Value::from(self)
     }

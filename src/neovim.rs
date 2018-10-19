@@ -104,7 +104,7 @@ impl UiAttachOptions {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum CallError {
     GenericError(String),
-    NeovimError(u64, String),
+    NeovimError(i64, String),
 }
 
 impl fmt::Display for CallError {
@@ -133,7 +133,7 @@ pub fn map_generic_error(err: Value) -> CallError {
             if arr.len() == 2 {
                 match (&arr[0], &arr[1]) {
                     (&Value::Integer(ref id), &Value::String(ref val)) => CallError::NeovimError(
-                        id.as_u64().unwrap(),
+                        id.as_i64().unwrap(),
                         val.as_str().unwrap().to_owned(),
                     ),
                     _ => CallError::GenericError(format!("{:?}", arr)),
@@ -161,8 +161,8 @@ impl Neovim {
     /// After this method is called, the client will receive redraw notifications.
     pub fn ui_attach(
         &mut self,
-        width: u64,
-        height: u64,
+        width: i64,
+        height: i64,
         opts: &UiAttachOptions,
     ) -> Result<(), CallError> {
         self.session
