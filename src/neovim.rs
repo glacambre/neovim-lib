@@ -15,7 +15,7 @@ pub enum UiOption {
     ExtTabline(bool),
     ExtCmdline(bool),
     ExtWildmenu(bool),
-    ExtNewgrid(bool),
+    ExtLinegrid(bool),
     ExtHlstate(bool),
 }
 
@@ -32,7 +32,7 @@ impl UiOption {
             UiOption::ExtTabline(val) => ("ext_tabline", val.into()),
             UiOption::ExtCmdline(val) => ("ext_cmdline", val.into()),
             UiOption::ExtWildmenu(val) => ("ext_wildmenu", val.into()),
-            UiOption::ExtNewgrid(val) => ("ext_newgrid", val.into()),
+            UiOption::ExtLinegrid(val) => ("ext_linegrid", val.into()),
             UiOption::ExtHlstate(val) => ("ext_hlstate", val.into()),
         }
     }
@@ -85,8 +85,8 @@ impl UiAttachOptions {
         self
     }
 
-    pub fn set_newgrid_external(&mut self, newgrid_external: bool) -> &mut Self {
-        self.set_option(UiOption::ExtNewgrid(newgrid_external));
+    pub fn set_linegrid_external(&mut self, linegrid_external: bool) -> &mut Self {
+        self.set_option(UiOption::ExtLinegrid(linegrid_external));
         self
     }
 
