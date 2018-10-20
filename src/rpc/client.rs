@@ -5,7 +5,7 @@ use std::thread;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
-use super::handler::{DefaultHandler, Handler};
+use super::handler::{self, DefaultHandler, Handler, RequestHanlder};
 use rmpv::Value;
 
 use super::model;
@@ -49,6 +49,26 @@ where
         self.dispatch_guard
             .take()
             .expect("Can only take join handle after running event loop")
+    }
+
+    pub fn start_event_loop_channel_handler<H>(
+        &mut self,
+        request_handler: H,
+    ) -> mpsc::Receiver<(String, Vec<Value>)>
+    where
+        H: RequestHanlder + Send + 'static,
+    {
+        let (handler, reciever) = handler::channel(request_handler);
+
+        self.dispatch_guard = Some(Self::dispatch_thread(
+            self.queue.clone(),
+            self.reader.take().unwrap(),
+            self.writer.clone(),
+            handler,
+        ));
+        self.event_loop_started = true;
+
+        reciever
     }
 
     pub fn start_event_loop_handler<H>(&mut self, handler: H)

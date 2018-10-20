@@ -1,9 +1,10 @@
-use std::result;
-use std::net::TcpStream;
 use std::io::Result;
 use std::io::{Error, ErrorKind, Stdin, Stdout};
+use std::net::TcpStream;
 use std::process::Stdio;
-use std::process::{Command, Child, ChildStdin, ChildStdout};
+use std::process::{Child, ChildStdin, ChildStdout, Command};
+use std::result;
+use std::sync::mpsc;
 use std::thread::JoinHandle;
 use std::time::Duration;
 
@@ -12,13 +13,12 @@ use std::path::Path;
 use unix_socket::UnixStream;
 
 use rpc;
-use rpc::handler::Handler;
+use rpc::handler::{DefaultHandler, Handler, RequestHanlder};
 use rpc::Client;
 
 use async::AsyncCall;
 
 use rmpv::Value;
-
 
 /// An active Neovim session.
 pub struct Session {
@@ -78,14 +78,13 @@ impl Session {
     ///
     /// stdin/stdout settings will be rewrited to `Stdio::piped()`
     pub fn new_child_cmd(cmd: &mut Command) -> Result<Session> {
-         let mut child = cmd
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()?;
-        let stdout = child.stdout
+        let mut child = cmd.stdin(Stdio::piped()).stdout(Stdio::piped()).spawn()?;
+        let stdout = child
+            .stdout
             .take()
             .ok_or_else(|| Error::new(ErrorKind::Other, "Can't open stdout"))?;
-        let stdin = child.stdin
+        let stdin = child
+            .stdin
             .take()
             .ok_or_else(|| Error::new(ErrorKind::Other, "Can't open stdin"))?;
 
@@ -115,8 +114,40 @@ impl Session {
     }
 
     /// Start processing rpc response and notifications
+    pub fn start_event_loop_channel_handler<H>(
+        &mut self,
+        request_handler: H,
+    ) -> mpsc::Receiver<(String, Vec<Value>)>
+    where
+        H: RequestHanlder + Send + 'static,
+    {
+        match self.client {
+            ClientConnection::Child(ref mut client, _) => {
+                client.start_event_loop_channel_handler(request_handler)
+            }
+            ClientConnection::Parent(ref mut client) => {
+                client.start_event_loop_channel_handler(request_handler)
+            }
+            ClientConnection::Tcp(ref mut client) => {
+                client.start_event_loop_channel_handler(request_handler)
+            }
+
+            #[cfg(unix)]
+            ClientConnection::UnixSocket(ref mut client) => {
+                client.start_event_loop_channel_handler(request_handler)
+            }
+        }
+    }
+
+    /// Start processing rpc response and notifications
+    pub fn start_event_loop_channel(&mut self) -> mpsc::Receiver<(String, Vec<Value>)> {
+        self.start_event_loop_channel_handler(DefaultHandler())
+    }
+
+    /// Start processing rpc response and notifications
     pub fn start_event_loop_handler<H>(&mut self, handler: H)
-        where H: Handler + Send + 'static
+    where
+        H: Handler + Send + 'static,
     {
         match self.client {
             ClientConnection::Child(ref mut client, _) => client.start_event_loop_handler(handler),
@@ -155,7 +186,11 @@ impl Session {
     }
 
     /// Create async call will be executed when only after call() function.
-    pub fn call_async<R: rpc::FromVal<Value>>(&mut self, method: &str, args: Vec<Value>) -> AsyncCall<R> {
+    pub fn call_async<R: rpc::FromVal<Value>>(
+        &mut self,
+        method: &str,
+        args: Vec<Value>,
+    ) -> AsyncCall<R> {
         AsyncCall::new(&mut self.client, method.to_owned(), args)
     }
 
