@@ -5,7 +5,7 @@ use std::thread;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
-use super::handler::{self, DefaultHandler, Handler, RequestHanlder};
+use super::handler::{self, DefaultHandler, Handler, RequestHandler};
 use rmpv::Value;
 
 use super::model;
@@ -56,7 +56,7 @@ where
         request_handler: H,
     ) -> mpsc::Receiver<(String, Vec<Value>)>
     where
-        H: RequestHanlder + Send + 'static,
+        H: RequestHandler + Send + 'static,
     {
         let (handler, reciever) = handler::channel(request_handler);
 
