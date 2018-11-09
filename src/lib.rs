@@ -43,11 +43,11 @@ pub mod neovim;
 pub mod neovim_api;
 pub mod neovim_api_async;
 
-pub use neovim::{Neovim, UiAttachOptions, UiOption, CallError};
+pub use async::AsyncCall;
+pub use neovim::{CallError, Neovim, UiAttachOptions, UiOption};
 pub use neovim_api::NeovimApi;
 pub use neovim_api_async::NeovimApiAsync;
-pub use async::AsyncCall;
 pub use session::Session;
 
-pub use rpc::handler::{Handler};
-pub use rmpv::{Value, Integer, Utf8String};
+pub use rmpv::{Integer, Utf8String, Value};
+pub use rpc::handler::{Handler, RequestHandler};
