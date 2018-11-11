@@ -13,7 +13,7 @@ use std::path::Path;
 use unix_socket::UnixStream;
 
 use rpc;
-use rpc::handler::{DefaultHandler, Handler, RequestHanlder};
+use rpc::handler::{DefaultHandler, Handler, RequestHandler};
 use rpc::Client;
 
 use async::AsyncCall;
@@ -119,7 +119,7 @@ impl Session {
         request_handler: H,
     ) -> mpsc::Receiver<(String, Vec<Value>)>
     where
-        H: RequestHanlder + Send + 'static,
+        H: RequestHandler + Send + 'static,
     {
         match self.client {
             ClientConnection::Child(ref mut client, _) => {
