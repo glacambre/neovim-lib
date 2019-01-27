@@ -1,4 +1,4 @@
-// Auto generated 2018-10-16 23:09:58.123979
+// Auto generated 2019-01-27 23:29:06.038446
 
 use async::AsyncCall;
 use neovim::*;
@@ -93,6 +93,10 @@ pub trait NeovimApiAsync {
     fn get_current_tabpage_async(&mut self) -> AsyncCall<Tabpage>;
     /// since: 1
     fn set_current_tabpage_async(&mut self, tabpage: &Tabpage) -> AsyncCall<()>;
+    /// since: 5
+    fn create_namespace_async(&mut self, name: &str) -> AsyncCall<i64>;
+    /// since: 5
+    fn get_namespaces_async(&mut self) -> AsyncCall<Vec<(Value, Value)>>;
     /// since: 1
     fn subscribe_async(&mut self, event: &str) -> AsyncCall<()>;
     /// since: 1
@@ -341,6 +345,16 @@ impl NeovimApiAsync for Neovim {
     fn set_current_tabpage_async(&mut self, tabpage: &Tabpage) -> AsyncCall<()> {
         self.session
             .call_async::<()>("nvim_set_current_tabpage", call_args![tabpage])
+    }
+
+    fn create_namespace_async(&mut self, name: &str) -> AsyncCall<i64> {
+        self.session
+            .call_async::<i64>("nvim_create_namespace", call_args![name])
+    }
+
+    fn get_namespaces_async(&mut self) -> AsyncCall<Vec<(Value, Value)>> {
+        self.session
+            .call_async::<Vec<(Value, Value)>>("nvim_get_namespaces", call_args![])
     }
 
     fn subscribe_async(&mut self, event: &str) -> AsyncCall<()> {

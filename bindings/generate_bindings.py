@@ -175,7 +175,7 @@ class ExtType:
         self.name = typename
         self.id = info['id']
         self.prefix = info['prefix']
-        
+
 
 def print_api(api):
     print(api.keys());
@@ -212,23 +212,8 @@ if __name__ == '__main__':
         sys.exit(-1)
 
     nvim = sys.argv[1]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     outpath = None if len(sys.argv) < 3 else sys.argv[2]
+
     try:
         api = get_api_info(sys.argv[1])
     except subprocess.CalledProcessError as ex:
