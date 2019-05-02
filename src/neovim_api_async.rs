@@ -1,4 +1,4 @@
-// Auto generated 2019-01-27 23:29:06.038446
+// Auto generated 2019-05-02 15:41:28.270643
 
 use async::AsyncCall;
 use neovim::*;
@@ -12,6 +12,8 @@ pub trait NeovimApiAsync {
     fn ui_try_resize_async(&mut self, width: i64, height: i64) -> AsyncCall<()>;
     /// since: 1
     fn ui_set_option_async(&mut self, name: &str, value: Value) -> AsyncCall<()>;
+    /// since: 6
+    fn ui_try_resize_grid_async(&mut self, grid: i64, width: i64, height: i64) -> AsyncCall<()>;
     /// since: 1
     fn command_async(&mut self, command: &str) -> AsyncCall<()>;
     /// since: 3
@@ -22,6 +24,16 @@ pub trait NeovimApiAsync {
     fn feedkeys_async(&mut self, keys: &str, mode: &str, escape_csi: bool) -> AsyncCall<()>;
     /// since: 1
     fn input_async(&mut self, keys: &str) -> AsyncCall<i64>;
+    /// since: 6
+    fn input_mouse_async(
+        &mut self,
+        button: &str,
+        action: &str,
+        modifier: &str,
+        grid: i64,
+        row: i64,
+        col: i64,
+    ) -> AsyncCall<()>;
     /// since: 1
     fn replace_termcodes_async(
         &mut self,
@@ -65,6 +77,8 @@ pub trait NeovimApiAsync {
     fn del_var_async(&mut self, name: &str) -> AsyncCall<()>;
     /// since: 1
     fn get_vvar_async(&mut self, name: &str) -> AsyncCall<Value>;
+    /// since: 6
+    fn set_vvar_async(&mut self, name: &str, value: Value) -> AsyncCall<()>;
     /// since: 1
     fn get_option_async(&mut self, name: &str) -> AsyncCall<Value>;
     /// since: 1
@@ -87,6 +101,15 @@ pub trait NeovimApiAsync {
     fn get_current_win_async(&mut self) -> AsyncCall<Window>;
     /// since: 1
     fn set_current_win_async(&mut self, window: &Window) -> AsyncCall<()>;
+    /// since: 6
+    fn create_buf_async(&mut self, listed: bool, scratch: bool) -> AsyncCall<Buffer>;
+    /// since: 6
+    fn open_win_async(
+        &mut self,
+        buffer: &Buffer,
+        enter: bool,
+        config: Vec<(Value, Value)>,
+    ) -> AsyncCall<Window>;
     /// since: 1
     fn list_tabpages_async(&mut self) -> AsyncCall<Vec<Tabpage>>;
     /// since: 1
@@ -141,6 +164,14 @@ pub trait NeovimApiAsync {
     fn get_proc_children_async(&mut self, pid: i64) -> AsyncCall<Vec<Value>>;
     /// since: 4
     fn get_proc_async(&mut self, pid: i64) -> AsyncCall<Value>;
+    /// since: 6
+    fn select_popupmenu_item_async(
+        &mut self,
+        item: i64,
+        insert: bool,
+        finish: bool,
+        opts: Vec<(Value, Value)>,
+    ) -> AsyncCall<()>;
 }
 
 impl NeovimApiAsync for Neovim {
@@ -157,6 +188,11 @@ impl NeovimApiAsync for Neovim {
     fn ui_set_option_async(&mut self, name: &str, value: Value) -> AsyncCall<()> {
         self.session
             .call_async::<()>("nvim_ui_set_option", call_args![name, value])
+    }
+
+    fn ui_try_resize_grid_async(&mut self, grid: i64, width: i64, height: i64) -> AsyncCall<()> {
+        self.session
+            .call_async::<()>("nvim_ui_try_resize_grid", call_args![grid, width, height])
     }
 
     fn command_async(&mut self, command: &str) -> AsyncCall<()> {
@@ -182,6 +218,21 @@ impl NeovimApiAsync for Neovim {
     fn input_async(&mut self, keys: &str) -> AsyncCall<i64> {
         self.session
             .call_async::<i64>("nvim_input", call_args![keys])
+    }
+
+    fn input_mouse_async(
+        &mut self,
+        button: &str,
+        action: &str,
+        modifier: &str,
+        grid: i64,
+        row: i64,
+        col: i64,
+    ) -> AsyncCall<()> {
+        self.session.call_async::<()>(
+            "nvim_input_mouse",
+            call_args![button, action, modifier, grid, row, col],
+        )
     }
 
     fn replace_termcodes_async(
@@ -277,6 +328,11 @@ impl NeovimApiAsync for Neovim {
             .call_async::<Value>("nvim_get_vvar", call_args![name])
     }
 
+    fn set_vvar_async(&mut self, name: &str, value: Value) -> AsyncCall<()> {
+        self.session
+            .call_async::<()>("nvim_set_vvar", call_args![name, value])
+    }
+
     fn get_option_async(&mut self, name: &str) -> AsyncCall<Value> {
         self.session
             .call_async::<Value>("nvim_get_option", call_args![name])
@@ -330,6 +386,21 @@ impl NeovimApiAsync for Neovim {
     fn set_current_win_async(&mut self, window: &Window) -> AsyncCall<()> {
         self.session
             .call_async::<()>("nvim_set_current_win", call_args![window])
+    }
+
+    fn create_buf_async(&mut self, listed: bool, scratch: bool) -> AsyncCall<Buffer> {
+        self.session
+            .call_async::<Buffer>("nvim_create_buf", call_args![listed, scratch])
+    }
+
+    fn open_win_async(
+        &mut self,
+        buffer: &Buffer,
+        enter: bool,
+        config: Vec<(Value, Value)>,
+    ) -> AsyncCall<Window> {
+        self.session
+            .call_async::<Window>("nvim_open_win", call_args![buffer, enter, config])
     }
 
     fn list_tabpages_async(&mut self) -> AsyncCall<Vec<Tabpage>> {
@@ -451,5 +522,18 @@ impl NeovimApiAsync for Neovim {
     fn get_proc_async(&mut self, pid: i64) -> AsyncCall<Value> {
         self.session
             .call_async::<Value>("nvim_get_proc", call_args![pid])
+    }
+
+    fn select_popupmenu_item_async(
+        &mut self,
+        item: i64,
+        insert: bool,
+        finish: bool,
+        opts: Vec<(Value, Value)>,
+    ) -> AsyncCall<()> {
+        self.session.call_async::<()>(
+            "nvim_select_popupmenu_item",
+            call_args![item, insert, finish, opts],
+        )
     }
 }

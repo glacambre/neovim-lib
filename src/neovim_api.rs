@@ -1,4 +1,4 @@
-// Auto generated 2019-01-27 23:29:06.441158
+// Auto generated 2019-05-02 15:41:28.236318
 
 use neovim::*;
 use rpc::*;
@@ -508,6 +508,37 @@ impl Window {
             .map(map_result)
             .map_err(map_generic_error)
     }
+    /// since: 6
+    pub fn set_config(
+        &self,
+        neovim: &mut Neovim,
+        config: Vec<(Value, Value)>,
+    ) -> Result<(), CallError> {
+        neovim
+            .session
+            .call(
+                "nvim_win_set_config",
+                call_args![self.code_data.clone(), config],
+            )
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+    /// since: 6
+    pub fn get_config(&self, neovim: &mut Neovim) -> Result<Vec<(Value, Value)>, CallError> {
+        neovim
+            .session
+            .call("nvim_win_get_config", call_args![self.code_data.clone()])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+    /// since: 6
+    pub fn close(&self, neovim: &mut Neovim, force: bool) -> Result<(), CallError> {
+        neovim
+            .session
+            .call("nvim_win_close", call_args![self.code_data.clone(), force])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -636,6 +667,8 @@ pub trait NeovimApi {
     fn ui_try_resize(&mut self, width: i64, height: i64) -> Result<(), CallError>;
     /// since: 1
     fn ui_set_option(&mut self, name: &str, value: Value) -> Result<(), CallError>;
+    /// since: 6
+    fn ui_try_resize_grid(&mut self, grid: i64, width: i64, height: i64) -> Result<(), CallError>;
     /// since: 1
     fn command(&mut self, command: &str) -> Result<(), CallError>;
     /// since: 3
@@ -646,6 +679,16 @@ pub trait NeovimApi {
     fn feedkeys(&mut self, keys: &str, mode: &str, escape_csi: bool) -> Result<(), CallError>;
     /// since: 1
     fn input(&mut self, keys: &str) -> Result<i64, CallError>;
+    /// since: 6
+    fn input_mouse(
+        &mut self,
+        button: &str,
+        action: &str,
+        modifier: &str,
+        grid: i64,
+        row: i64,
+        col: i64,
+    ) -> Result<(), CallError>;
     /// since: 1
     fn replace_termcodes(
         &mut self,
@@ -689,6 +732,8 @@ pub trait NeovimApi {
     fn del_var(&mut self, name: &str) -> Result<(), CallError>;
     /// since: 1
     fn get_vvar(&mut self, name: &str) -> Result<Value, CallError>;
+    /// since: 6
+    fn set_vvar(&mut self, name: &str, value: Value) -> Result<(), CallError>;
     /// since: 1
     fn get_option(&mut self, name: &str) -> Result<Value, CallError>;
     /// since: 1
@@ -711,6 +756,15 @@ pub trait NeovimApi {
     fn get_current_win(&mut self) -> Result<Window, CallError>;
     /// since: 1
     fn set_current_win(&mut self, window: &Window) -> Result<(), CallError>;
+    /// since: 6
+    fn create_buf(&mut self, listed: bool, scratch: bool) -> Result<Buffer, CallError>;
+    /// since: 6
+    fn open_win(
+        &mut self,
+        buffer: &Buffer,
+        enter: bool,
+        config: Vec<(Value, Value)>,
+    ) -> Result<Window, CallError>;
     /// since: 1
     fn list_tabpages(&mut self) -> Result<Vec<Tabpage>, CallError>;
     /// since: 1
@@ -766,6 +820,14 @@ pub trait NeovimApi {
     fn get_proc_children(&mut self, pid: i64) -> Result<Vec<Value>, CallError>;
     /// since: 4
     fn get_proc(&mut self, pid: i64) -> Result<Value, CallError>;
+    /// since: 6
+    fn select_popupmenu_item(
+        &mut self,
+        item: i64,
+        insert: bool,
+        finish: bool,
+        opts: Vec<(Value, Value)>,
+    ) -> Result<(), CallError>;
 }
 
 impl NeovimApi for Neovim {
@@ -786,6 +848,13 @@ impl NeovimApi for Neovim {
     fn ui_set_option(&mut self, name: &str, value: Value) -> Result<(), CallError> {
         self.session
             .call("nvim_ui_set_option", call_args![name, value])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+
+    fn ui_try_resize_grid(&mut self, grid: i64, width: i64, height: i64) -> Result<(), CallError> {
+        self.session
+            .call("nvim_ui_try_resize_grid", call_args![grid, width, height])
             .map(map_result)
             .map_err(map_generic_error)
     }
@@ -821,6 +890,24 @@ impl NeovimApi for Neovim {
     fn input(&mut self, keys: &str) -> Result<i64, CallError> {
         self.session
             .call("nvim_input", call_args![keys])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+
+    fn input_mouse(
+        &mut self,
+        button: &str,
+        action: &str,
+        modifier: &str,
+        grid: i64,
+        row: i64,
+        col: i64,
+    ) -> Result<(), CallError> {
+        self.session
+            .call(
+                "nvim_input_mouse",
+                call_args![button, action, modifier, grid, row, col],
+            )
             .map(map_result)
             .map_err(map_generic_error)
     }
@@ -951,6 +1038,13 @@ impl NeovimApi for Neovim {
             .map_err(map_generic_error)
     }
 
+    fn set_vvar(&mut self, name: &str, value: Value) -> Result<(), CallError> {
+        self.session
+            .call("nvim_set_vvar", call_args![name, value])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+
     fn get_option(&mut self, name: &str) -> Result<Value, CallError> {
         self.session
             .call("nvim_get_option", call_args![name])
@@ -1024,6 +1118,25 @@ impl NeovimApi for Neovim {
     fn set_current_win(&mut self, window: &Window) -> Result<(), CallError> {
         self.session
             .call("nvim_set_current_win", call_args![window])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+
+    fn create_buf(&mut self, listed: bool, scratch: bool) -> Result<Buffer, CallError> {
+        self.session
+            .call("nvim_create_buf", call_args![listed, scratch])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+
+    fn open_win(
+        &mut self,
+        buffer: &Buffer,
+        enter: bool,
+        config: Vec<(Value, Value)>,
+    ) -> Result<Window, CallError> {
+        self.session
+            .call("nvim_open_win", call_args![buffer, enter, config])
             .map(map_result)
             .map_err(map_generic_error)
     }
@@ -1189,6 +1302,22 @@ impl NeovimApi for Neovim {
     fn get_proc(&mut self, pid: i64) -> Result<Value, CallError> {
         self.session
             .call("nvim_get_proc", call_args![pid])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+
+    fn select_popupmenu_item(
+        &mut self,
+        item: i64,
+        insert: bool,
+        finish: bool,
+        opts: Vec<(Value, Value)>,
+    ) -> Result<(), CallError> {
+        self.session
+            .call(
+                "nvim_select_popupmenu_item",
+                call_args![item, insert, finish, opts],
+            )
             .map(map_result)
             .map_err(map_generic_error)
     }
