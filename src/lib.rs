@@ -27,7 +27,6 @@
 //! let (event_name, args) = receiver.recv().unwrap();
 //!
 //! ```
-extern crate rmp;
 extern crate rmpv;
 #[macro_use]
 extern crate log;
