@@ -27,12 +27,10 @@
 //! let (event_name, args) = receiver.recv().unwrap();
 //!
 //! ```
-extern crate rmpv;
 #[macro_use]
 extern crate log;
 
-#[cfg(unix)]
-extern crate unix_socket;
+
 
 mod rpc;
 #[macro_use]

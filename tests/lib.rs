@@ -1,6 +1,3 @@
-extern crate neovim_lib;
-extern crate tempdir;
-
 use neovim_lib::session::Session;
 use neovim_lib::neovim::Neovim;
 use neovim_lib::neovim_api::NeovimApi;

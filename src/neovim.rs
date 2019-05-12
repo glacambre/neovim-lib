@@ -115,7 +115,7 @@ pub enum CallError {
 }
 
 impl fmt::Display for CallError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             CallError::GenericError(ref s) => write!(f, "Unknown error type: {}", s),
             CallError::NeovimError(id, ref s) => write!(f, "{} - {}", id, s),

@@ -190,7 +190,7 @@ impl Session {
         &mut self,
         method: &str,
         args: Vec<Value>,
-    ) -> AsyncCall<R> {
+    ) -> AsyncCall<'_, R> {
         AsyncCall::new(&mut self.client, method.to_owned(), args)
     }
 
