@@ -1,5 +1,4 @@
 extern crate neovim_lib;
-extern crate rmp;
 extern crate tempdir;
 
 use neovim_lib::session::Session;
