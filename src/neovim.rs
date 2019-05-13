@@ -1,7 +1,7 @@
-use neovim_api::NeovimApi;
+use crate::neovim_api::NeovimApi;
+use crate::rpc::*;
+use crate::session::Session;
 use rmpv::Value;
-use rpc::*;
-use session::Session;
 use std::error::Error;
 use std::fmt;
 
@@ -115,7 +115,7 @@ pub enum CallError {
 }
 
 impl fmt::Display for CallError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             CallError::GenericError(ref s) => write!(f, "Unknown error type: {}", s),
             CallError::NeovimError(id, ref s) => write!(f, "{} - {}", id, s),
@@ -176,7 +176,8 @@ impl Neovim {
             .call(
                 "nvim_ui_attach",
                 call_args!(width, height, opts.to_value_map()),
-            ).map_err(map_generic_error)
+            )
+            .map_err(map_generic_error)
             .map(|_| ())
     }
 

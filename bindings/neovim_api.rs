@@ -1,7 +1,7 @@
 // Auto generated {{date}}
 
-use neovim::*;
-use rpc::*;
+use crate::neovim::*;
+use crate::rpc::*;
 
 {% for etype in exttypes %}
 #[derive(PartialEq, Clone, Debug)]

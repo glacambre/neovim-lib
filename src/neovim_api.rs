@@ -1,7 +1,7 @@
 // Auto generated 2019-05-02 15:41:28.236318
 
-use neovim::*;
-use rpc::*;
+use crate::neovim::*;
+use crate::rpc::*;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Buffer {

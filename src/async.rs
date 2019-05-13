@@ -2,15 +2,15 @@ use std::marker::PhantomData;
 
 use rmpv::Value;
 
-use neovim;
-use rpc::model::FromVal;
-use session::ClientConnection;
+use crate::neovim;
+use crate::rpc::model::FromVal;
+use crate::session::ClientConnection;
 
 pub struct AsyncCall<'a, R: FromVal<Value>> {
     method: String,
     args: Vec<Value>,
     client: &'a mut ClientConnection,
-    cb: Option<Box<FnMut(Result<Value, Value>) + Send + 'static>>,
+    cb: Option<Box<dyn FnMut(Result<Value, Value>) + Send + 'static>>,
     marker: PhantomData<R>,
 }
 
