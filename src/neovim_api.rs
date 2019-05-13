@@ -1,4 +1,4 @@
-// Auto generated 2019-05-02 15:41:28.236318
+// Auto generated 2019-05-14 07:31:28.972963
 
 use crate::neovim::*;
 use crate::rpc::*;
@@ -132,6 +132,35 @@ impl Buffer {
             .call(
                 "nvim_buf_get_keymap",
                 call_args![self.code_data.clone(), mode],
+            )
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+    /// since: 6
+    pub fn set_keymap(
+        &self,
+        neovim: &mut Neovim,
+        mode: &str,
+        lhs: &str,
+        rhs: &str,
+        opts: Vec<(Value, Value)>,
+    ) -> Result<(), CallError> {
+        neovim
+            .session
+            .call(
+                "nvim_buf_set_keymap",
+                call_args![self.code_data.clone(), mode, lhs, rhs, opts],
+            )
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+    /// since: 6
+    pub fn del_keymap(&self, neovim: &mut Neovim, mode: &str, lhs: &str) -> Result<(), CallError> {
+        neovim
+            .session
+            .call(
+                "nvim_buf_del_keymap",
+                call_args![self.code_data.clone(), mode, lhs],
             )
             .map(map_result)
             .map_err(map_generic_error)
@@ -787,6 +816,16 @@ pub trait NeovimApi {
     fn get_mode(&mut self) -> Result<Vec<(Value, Value)>, CallError>;
     /// since: 3
     fn get_keymap(&mut self, mode: &str) -> Result<Vec<Vec<(Value, Value)>>, CallError>;
+    /// since: 6
+    fn set_keymap(
+        &mut self,
+        mode: &str,
+        lhs: &str,
+        rhs: &str,
+        opts: Vec<(Value, Value)>,
+    ) -> Result<(), CallError>;
+    /// since: 6
+    fn del_keymap(&mut self, mode: &str, lhs: &str) -> Result<(), CallError>;
     /// since: 4
     fn get_commands(&mut self, opts: Vec<(Value, Value)>)
         -> Result<Vec<(Value, Value)>, CallError>;
@@ -1214,6 +1253,26 @@ impl NeovimApi for Neovim {
     fn get_keymap(&mut self, mode: &str) -> Result<Vec<Vec<(Value, Value)>>, CallError> {
         self.session
             .call("nvim_get_keymap", call_args![mode])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+
+    fn set_keymap(
+        &mut self,
+        mode: &str,
+        lhs: &str,
+        rhs: &str,
+        opts: Vec<(Value, Value)>,
+    ) -> Result<(), CallError> {
+        self.session
+            .call("nvim_set_keymap", call_args![mode, lhs, rhs, opts])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+
+    fn del_keymap(&mut self, mode: &str, lhs: &str) -> Result<(), CallError> {
+        self.session
+            .call("nvim_del_keymap", call_args![mode, lhs])
             .map(map_result)
             .map_err(map_generic_error)
     }
