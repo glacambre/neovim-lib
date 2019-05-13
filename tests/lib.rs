@@ -1,6 +1,6 @@
-use neovim_lib::session::Session;
 use neovim_lib::neovim::Neovim;
 use neovim_lib::neovim_api::NeovimApi;
+use neovim_lib::session::Session;
 
 #[cfg(unix)]
 use std::process::Command;
@@ -38,7 +38,9 @@ fn edit_test() {
     session.start_event_loop();
     let mut nvim = Neovim::new(session);
     let buffers = nvim.list_bufs().unwrap();
-    buffers[0].set_lines(&mut nvim, 0, 0, true, vec!["replace first line".to_owned()]).unwrap();
+    buffers[0]
+        .set_lines(&mut nvim, 0, 0, true, vec!["replace first line".to_owned()])
+        .unwrap();
     nvim.command("vsplit").unwrap();
     let windows = nvim.list_wins().unwrap();
     windows[0].set_width(&mut nvim, 10).unwrap();
@@ -79,31 +81,34 @@ fn can_connect_via_unix_socket() {
         }
     }
 
-
-    let mut session = Session::new_unix_socket(&socket_path)
-        .expect(&format!("Unable to connect to neovim's unix socket at {:?}",
-                         &socket_path));
+    let mut session = Session::new_unix_socket(&socket_path).expect(&format!(
+        "Unable to connect to neovim's unix socket at {:?}",
+        &socket_path
+    ));
 
     session.start_event_loop();
 
     let mut nvim = Neovim::new(session);
 
-    let servername = nvim.get_vvar("servername")
+    let servername = nvim
+        .get_vvar("servername")
         .expect("Error retrieving servername from neovim over unix socket");
 
     // let's make sure the servername string and socket path string both match.
     match servername.as_str() {
         Some(ref name) => {
             if Path::new(name) != socket_path {
-                panic!(format!("Server name does not match socket path! {} != {}",
-                               name,
-                               socket_path.to_str().unwrap()));
+                panic!(format!(
+                    "Server name does not match socket path! {} != {}",
+                    name,
+                    socket_path.to_str().unwrap()
+                ));
             }
         }
-        None => {
-            panic!(format!("Server name does not match socket path! {:?} != {}",
-                           servername,
-                           socket_path.to_str().unwrap()))
-        }
+        None => panic!(format!(
+            "Server name does not match socket path! {:?} != {}",
+            servername,
+            socket_path.to_str().unwrap()
+        )),
     }
 }

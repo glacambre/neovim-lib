@@ -1,8 +1,8 @@
 // Auto generated 2019-05-02 15:41:28.270643
 
-use crate::r#async::AsyncCall;
 use crate::neovim::*;
 use crate::neovim_api::*;
+use crate::r#async::AsyncCall;
 use crate::rpc::*;
 
 pub trait NeovimApiAsync {
@@ -13,11 +13,13 @@ pub trait NeovimApiAsync {
     /// since: 1
     fn ui_set_option_async(&mut self, name: &str, value: Value) -> AsyncCall<'_, ()>;
     /// since: 6
-    fn ui_try_resize_grid_async(&mut self, grid: i64, width: i64, height: i64) -> AsyncCall<'_, ()>;
+    fn ui_try_resize_grid_async(&mut self, grid: i64, width: i64, height: i64)
+        -> AsyncCall<'_, ()>;
     /// since: 1
     fn command_async(&mut self, command: &str) -> AsyncCall<'_, ()>;
     /// since: 3
-    fn get_hl_by_name_async(&mut self, name: &str, rgb: bool) -> AsyncCall<'_, Vec<(Value, Value)>>;
+    fn get_hl_by_name_async(&mut self, name: &str, rgb: bool)
+        -> AsyncCall<'_, Vec<(Value, Value)>>;
     /// since: 3
     fn get_hl_by_id_async(&mut self, hl_id: i64, rgb: bool) -> AsyncCall<'_, Vec<(Value, Value)>>;
     /// since: 1
@@ -133,7 +135,10 @@ pub trait NeovimApiAsync {
     /// since: 3
     fn get_keymap_async(&mut self, mode: &str) -> AsyncCall<'_, Vec<Vec<(Value, Value)>>>;
     /// since: 4
-    fn get_commands_async(&mut self, opts: Vec<(Value, Value)>) -> AsyncCall<'_, Vec<(Value, Value)>>;
+    fn get_commands_async(
+        &mut self,
+        opts: Vec<(Value, Value)>,
+    ) -> AsyncCall<'_, Vec<(Value, Value)>>;
     /// since: 1
     fn get_api_info_async(&mut self) -> AsyncCall<'_, Vec<Value>>;
     /// since: 4
@@ -190,7 +195,12 @@ impl NeovimApiAsync for Neovim {
             .call_async::<()>("nvim_ui_set_option", call_args![name, value])
     }
 
-    fn ui_try_resize_grid_async(&mut self, grid: i64, width: i64, height: i64) -> AsyncCall<'_, ()> {
+    fn ui_try_resize_grid_async(
+        &mut self,
+        grid: i64,
+        width: i64,
+        height: i64,
+    ) -> AsyncCall<'_, ()> {
         self.session
             .call_async::<()>("nvim_ui_try_resize_grid", call_args![grid, width, height])
     }
@@ -200,7 +210,11 @@ impl NeovimApiAsync for Neovim {
             .call_async::<()>("nvim_command", call_args![command])
     }
 
-    fn get_hl_by_name_async(&mut self, name: &str, rgb: bool) -> AsyncCall<'_, Vec<(Value, Value)>> {
+    fn get_hl_by_name_async(
+        &mut self,
+        name: &str,
+        rgb: bool,
+    ) -> AsyncCall<'_, Vec<(Value, Value)>> {
         self.session
             .call_async::<Vec<(Value, Value)>>("nvim_get_hl_by_name", call_args![name, rgb])
     }
@@ -458,7 +472,10 @@ impl NeovimApiAsync for Neovim {
             .call_async::<Vec<Vec<(Value, Value)>>>("nvim_get_keymap", call_args![mode])
     }
 
-    fn get_commands_async(&mut self, opts: Vec<(Value, Value)>) -> AsyncCall<'_, Vec<(Value, Value)>> {
+    fn get_commands_async(
+        &mut self,
+        opts: Vec<(Value, Value)>,
+    ) -> AsyncCall<'_, Vec<(Value, Value)>> {
         self.session
             .call_async::<Vec<(Value, Value)>>("nvim_get_commands", call_args![opts])
     }

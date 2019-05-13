@@ -27,10 +27,9 @@
 //! let (event_name, args) = receiver.recv().unwrap();
 //!
 //! ```
+
 #[macro_use]
 extern crate log;
-
-
 
 mod rpc;
 #[macro_use]
@@ -40,11 +39,11 @@ pub mod neovim;
 pub mod neovim_api;
 pub mod neovim_api_async;
 
-pub use crate::r#async::AsyncCall;
 pub use crate::neovim::{CallError, Neovim, UiAttachOptions, UiOption};
 pub use crate::neovim_api::NeovimApi;
 pub use crate::neovim_api_async::NeovimApiAsync;
+pub use crate::r#async::AsyncCall;
 pub use crate::session::Session;
 
-pub use rmpv::{Integer, Utf8String, Value};
 pub use crate::rpc::handler::{Handler, RequestHandler};
+pub use rmpv::{Integer, Utf8String, Value};

@@ -1,7 +1,7 @@
 use crate::neovim_api::NeovimApi;
-use rmpv::Value;
 use crate::rpc::*;
 use crate::session::Session;
+use rmpv::Value;
 use std::error::Error;
 use std::fmt;
 
@@ -176,7 +176,8 @@ impl Neovim {
             .call(
                 "nvim_ui_attach",
                 call_args!(width, height, opts.to_value_map()),
-            ).map_err(map_generic_error)
+            )
+            .map_err(map_generic_error)
             .map(|_| ())
     }
 
