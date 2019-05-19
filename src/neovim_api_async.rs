@@ -1,4 +1,4 @@
-// Auto generated 2019-05-02 15:41:28.270643
+// Auto generated 2019-05-14 07:31:29.005540
 
 use crate::neovim::*;
 use crate::neovim_api::*;
@@ -134,6 +134,16 @@ pub trait NeovimApiAsync {
     fn get_mode_async(&mut self) -> AsyncCall<'_, Vec<(Value, Value)>>;
     /// since: 3
     fn get_keymap_async(&mut self, mode: &str) -> AsyncCall<'_, Vec<Vec<(Value, Value)>>>;
+    /// since: 6
+    fn set_keymap_async(
+        &mut self,
+        mode: &str,
+        lhs: &str,
+        rhs: &str,
+        opts: Vec<(Value, Value)>,
+    ) -> AsyncCall<'_, ()>;
+    /// since: 6
+    fn del_keymap_async(&mut self, mode: &str, lhs: &str) -> AsyncCall<'_, ()>;
     /// since: 4
     fn get_commands_async(
         &mut self,
@@ -470,6 +480,22 @@ impl NeovimApiAsync for Neovim {
     fn get_keymap_async(&mut self, mode: &str) -> AsyncCall<'_, Vec<Vec<(Value, Value)>>> {
         self.session
             .call_async::<Vec<Vec<(Value, Value)>>>("nvim_get_keymap", call_args![mode])
+    }
+
+    fn set_keymap_async(
+        &mut self,
+        mode: &str,
+        lhs: &str,
+        rhs: &str,
+        opts: Vec<(Value, Value)>,
+    ) -> AsyncCall<'_, ()> {
+        self.session
+            .call_async::<()>("nvim_set_keymap", call_args![mode, lhs, rhs, opts])
+    }
+
+    fn del_keymap_async(&mut self, mode: &str, lhs: &str) -> AsyncCall<'_, ()> {
+        self.session
+            .call_async::<()>("nvim_del_keymap", call_args![mode, lhs])
     }
 
     fn get_commands_async(
