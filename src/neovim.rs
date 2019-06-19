@@ -18,6 +18,7 @@ pub enum UiOption {
     ExtLinegrid(bool),
     ExtHlstate(bool),
     ExtTermcolors(bool),
+    ExtMessages(bool),
 }
 
 impl UiOption {
@@ -36,6 +37,7 @@ impl UiOption {
             UiOption::ExtLinegrid(val) => ("ext_linegrid", val.into()),
             UiOption::ExtHlstate(val) => ("ext_hlstate", val.into()),
             UiOption::ExtTermcolors(val) => ("ext_termcolors", val.into()),
+            UiOption::ExtMessages(val) => ("ext_messages", val.into()),
         }
     }
 }
@@ -99,6 +101,11 @@ impl UiAttachOptions {
 
     pub fn set_termcolors_external(&mut self, termcolors_external: bool) -> &mut Self {
         self.set_option(UiOption::ExtTermcolors(termcolors_external));
+        self
+    }
+
+    pub fn set_messages_external(&mut self, messages_external: bool) -> &mut Self {
+        self.set_option(UiOption::ExtMessages(messages_external));
         self
     }
 
