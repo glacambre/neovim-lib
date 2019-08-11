@@ -235,6 +235,7 @@ where
                 Ok(msg) => msg,
                 Err(e) => {
                     error!("Error while reading: {}", e);
+                    handler.handle_close();
                     Self::send_error_to_callers(&queue, &e);
                     return;
                 }
