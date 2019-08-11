@@ -9,6 +9,8 @@ pub trait RequestHandler {
 
 pub trait Handler: RequestHandler {
     fn handle_notify(&mut self, _name: &str, _args: Vec<Value>) {}
+
+    fn handle_close(&mut self) { }
 }
 
 pub struct DefaultHandler();
