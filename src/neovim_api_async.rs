@@ -1,4 +1,4 @@
-// Auto generated 2019-05-14 07:31:29.005540
+// Auto generated 2019-08-29 20:30:35.029910
 
 use crate::neovim::*;
 use crate::neovim_api::*;
@@ -122,6 +122,16 @@ pub trait NeovimApiAsync {
     fn create_namespace_async(&mut self, name: &str) -> AsyncCall<'_, i64>;
     /// since: 5
     fn get_namespaces_async(&mut self) -> AsyncCall<'_, Vec<(Value, Value)>>;
+    /// since: 6
+    fn paste_async(&mut self, data: &str, phase: i64) -> AsyncCall<'_, bool>;
+    /// since: 6
+    fn put_async(
+        &mut self,
+        lines: Vec<String>,
+        typ: &str,
+        after: bool,
+        follow: bool,
+    ) -> AsyncCall<'_, ()>;
     /// since: 1
     fn subscribe_async(&mut self, event: &str) -> AsyncCall<'_, ()>;
     /// since: 1
@@ -130,6 +140,10 @@ pub trait NeovimApiAsync {
     fn get_color_by_name_async(&mut self, name: &str) -> AsyncCall<'_, i64>;
     /// since: 1
     fn get_color_map_async(&mut self) -> AsyncCall<'_, Vec<(Value, Value)>>;
+    /// since: 6
+    fn get_context_async(&mut self, types: Vec<Value>) -> AsyncCall<'_, Vec<(Value, Value)>>;
+    /// since: 6
+    fn load_context_async(&mut self, dict: Vec<(Value, Value)>) -> AsyncCall<'_, Value>;
     /// since: 2
     fn get_mode_async(&mut self) -> AsyncCall<'_, Vec<(Value, Value)>>;
     /// since: 3
@@ -452,6 +466,22 @@ impl NeovimApiAsync for Neovim {
             .call_async::<Vec<(Value, Value)>>("nvim_get_namespaces", call_args![])
     }
 
+    fn paste_async(&mut self, data: &str, phase: i64) -> AsyncCall<'_, bool> {
+        self.session
+            .call_async::<bool>("nvim_paste", call_args![data, phase])
+    }
+
+    fn put_async(
+        &mut self,
+        lines: Vec<String>,
+        typ: &str,
+        after: bool,
+        follow: bool,
+    ) -> AsyncCall<'_, ()> {
+        self.session
+            .call_async::<()>("nvim_put", call_args![lines, typ, after, follow])
+    }
+
     fn subscribe_async(&mut self, event: &str) -> AsyncCall<'_, ()> {
         self.session
             .call_async::<()>("nvim_subscribe", call_args![event])
@@ -470,6 +500,16 @@ impl NeovimApiAsync for Neovim {
     fn get_color_map_async(&mut self) -> AsyncCall<'_, Vec<(Value, Value)>> {
         self.session
             .call_async::<Vec<(Value, Value)>>("nvim_get_color_map", call_args![])
+    }
+
+    fn get_context_async(&mut self, types: Vec<Value>) -> AsyncCall<'_, Vec<(Value, Value)>> {
+        self.session
+            .call_async::<Vec<(Value, Value)>>("nvim_get_context", call_args![types])
+    }
+
+    fn load_context_async(&mut self, dict: Vec<(Value, Value)>) -> AsyncCall<'_, Value> {
+        self.session
+            .call_async::<Value>("nvim_load_context", call_args![dict])
     }
 
     fn get_mode_async(&mut self) -> AsyncCall<'_, Vec<(Value, Value)>> {
