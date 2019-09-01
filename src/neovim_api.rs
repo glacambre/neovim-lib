@@ -1,4 +1,4 @@
-// Auto generated 2019-05-14 07:31:28.972963
+// Auto generated 2019-08-29 20:30:34.996423
 
 use crate::neovim::*;
 use crate::rpc::*;
@@ -804,6 +804,16 @@ pub trait NeovimApi {
     fn create_namespace(&mut self, name: &str) -> Result<i64, CallError>;
     /// since: 5
     fn get_namespaces(&mut self) -> Result<Vec<(Value, Value)>, CallError>;
+    /// since: 6
+    fn paste(&mut self, data: &str, phase: i64) -> Result<bool, CallError>;
+    /// since: 6
+    fn put(
+        &mut self,
+        lines: Vec<String>,
+        typ: &str,
+        after: bool,
+        follow: bool,
+    ) -> Result<(), CallError>;
     /// since: 1
     fn subscribe(&mut self, event: &str) -> Result<(), CallError>;
     /// since: 1
@@ -812,6 +822,10 @@ pub trait NeovimApi {
     fn get_color_by_name(&mut self, name: &str) -> Result<i64, CallError>;
     /// since: 1
     fn get_color_map(&mut self) -> Result<Vec<(Value, Value)>, CallError>;
+    /// since: 6
+    fn get_context(&mut self, types: Vec<Value>) -> Result<Vec<(Value, Value)>, CallError>;
+    /// since: 6
+    fn load_context(&mut self, dict: Vec<(Value, Value)>) -> Result<Value, CallError>;
     /// since: 2
     fn get_mode(&mut self) -> Result<Vec<(Value, Value)>, CallError>;
     /// since: 3
@@ -1215,6 +1229,26 @@ impl NeovimApi for Neovim {
             .map_err(map_generic_error)
     }
 
+    fn paste(&mut self, data: &str, phase: i64) -> Result<bool, CallError> {
+        self.session
+            .call("nvim_paste", call_args![data, phase])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+
+    fn put(
+        &mut self,
+        lines: Vec<String>,
+        typ: &str,
+        after: bool,
+        follow: bool,
+    ) -> Result<(), CallError> {
+        self.session
+            .call("nvim_put", call_args![lines, typ, after, follow])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+
     fn subscribe(&mut self, event: &str) -> Result<(), CallError> {
         self.session
             .call("nvim_subscribe", call_args![event])
@@ -1239,6 +1273,20 @@ impl NeovimApi for Neovim {
     fn get_color_map(&mut self) -> Result<Vec<(Value, Value)>, CallError> {
         self.session
             .call("nvim_get_color_map", call_args![])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+
+    fn get_context(&mut self, types: Vec<Value>) -> Result<Vec<(Value, Value)>, CallError> {
+        self.session
+            .call("nvim_get_context", call_args![types])
+            .map(map_result)
+            .map_err(map_generic_error)
+    }
+
+    fn load_context(&mut self, dict: Vec<(Value, Value)>) -> Result<Value, CallError> {
+        self.session
+            .call("nvim_load_context", call_args![dict])
             .map(map_result)
             .map_err(map_generic_error)
     }
