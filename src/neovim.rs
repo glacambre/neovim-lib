@@ -10,15 +10,16 @@ pub struct Neovim {
 }
 
 pub enum UiOption {
-    RGB(bool),
+    ExtCmdline(bool),
+    ExtHlstate(bool),
+    ExtLinegrid(bool),
+    ExtMessages(bool),
     ExtPopupmenu(bool),
     ExtTabline(bool),
-    ExtCmdline(bool),
-    ExtWildmenu(bool),
-    ExtLinegrid(bool),
-    ExtHlstate(bool),
     ExtTermcolors(bool),
-    ExtMessages(bool),
+    ExtWildmenu(bool),
+    ExtWindows(bool),
+    RGB(bool),
 }
 
 impl UiOption {
@@ -29,15 +30,16 @@ impl UiOption {
 
     fn to_name_value(&self) -> (&'static str, Value) {
         match *self {
-            UiOption::RGB(val) => ("rgb", val.into()),
+            UiOption::ExtCmdline(val) => ("ext_cmdline", val.into()),
+            UiOption::ExtHlstate(val) => ("ext_hlstate", val.into()),
+            UiOption::ExtLinegrid(val) => ("ext_linegrid", val.into()),
+            UiOption::ExtMessages(val) => ("ext_messages", val.into()),
             UiOption::ExtPopupmenu(val) => ("ext_popupmenu", val.into()),
             UiOption::ExtTabline(val) => ("ext_tabline", val.into()),
-            UiOption::ExtCmdline(val) => ("ext_cmdline", val.into()),
-            UiOption::ExtWildmenu(val) => ("ext_wildmenu", val.into()),
-            UiOption::ExtLinegrid(val) => ("ext_linegrid", val.into()),
-            UiOption::ExtHlstate(val) => ("ext_hlstate", val.into()),
             UiOption::ExtTermcolors(val) => ("ext_termcolors", val.into()),
-            UiOption::ExtMessages(val) => ("ext_messages", val.into()),
+            UiOption::ExtWildmenu(val) => ("ext_wildmenu", val.into()),
+            UiOption::ExtWindows(val) => ("ext_windows", val.into()),
+            UiOption::RGB(val) => ("rgb", val.into()),
         }
     }
 }
@@ -64,33 +66,8 @@ impl UiAttachOptions {
         }
     }
 
-    pub fn set_rgb(&mut self, rgb: bool) -> &mut Self {
-        self.set_option(UiOption::RGB(rgb));
-        self
-    }
-
-    pub fn set_popupmenu_external(&mut self, popupmenu_external: bool) -> &mut Self {
-        self.set_option(UiOption::ExtPopupmenu(popupmenu_external));
-        self
-    }
-
-    pub fn set_tabline_external(&mut self, tabline_external: bool) -> &mut Self {
-        self.set_option(UiOption::ExtTabline(tabline_external));
-        self
-    }
-
     pub fn set_cmdline_external(&mut self, cmdline_external: bool) -> &mut Self {
         self.set_option(UiOption::ExtCmdline(cmdline_external));
-        self
-    }
-
-    pub fn set_wildmenu_external(&mut self, wildmenu_external: bool) -> &mut Self {
-        self.set_option(UiOption::ExtWildmenu(wildmenu_external));
-        self
-    }
-
-    pub fn set_linegrid_external(&mut self, linegrid_external: bool) -> &mut Self {
-        self.set_option(UiOption::ExtLinegrid(linegrid_external));
         self
     }
 
@@ -99,13 +76,43 @@ impl UiAttachOptions {
         self
     }
 
-    pub fn set_termcolors_external(&mut self, termcolors_external: bool) -> &mut Self {
-        self.set_option(UiOption::ExtTermcolors(termcolors_external));
+    pub fn set_linegrid_external(&mut self, linegrid_external: bool) -> &mut Self {
+        self.set_option(UiOption::ExtLinegrid(linegrid_external));
         self
     }
 
     pub fn set_messages_external(&mut self, messages_external: bool) -> &mut Self {
         self.set_option(UiOption::ExtMessages(messages_external));
+        self
+    }
+
+    pub fn set_popupmenu_external(&mut self, popupmenu_external: bool) -> &mut Self {
+        self.set_option(UiOption::ExtPopupmenu(popupmenu_external));
+        self
+    }
+
+    pub fn set_rgb(&mut self, rgb: bool) -> &mut Self {
+        self.set_option(UiOption::RGB(rgb));
+        self
+    }
+
+    pub fn set_tabline_external(&mut self, tabline_external: bool) -> &mut Self {
+        self.set_option(UiOption::ExtTabline(tabline_external));
+        self
+    }
+
+    pub fn set_termcolors_external(&mut self, termcolors_external: bool) -> &mut Self {
+        self.set_option(UiOption::ExtTermcolors(termcolors_external));
+        self
+    }
+
+    pub fn set_wildmenu_external(&mut self, wildmenu_external: bool) -> &mut Self {
+        self.set_option(UiOption::ExtWildmenu(wildmenu_external));
+        self
+    }
+
+    pub fn set_windows_external(&mut self, windows_external: bool) -> &mut Self {
+        self.set_option(UiOption::ExtWindows(windows_external));
         self
     }
 
