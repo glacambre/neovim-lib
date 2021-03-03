@@ -14,6 +14,7 @@ pub enum UiOption {
     ExtHlstate(bool),
     ExtLinegrid(bool),
     ExtMessages(bool),
+    ExtMultigrid(bool),
     ExtPopupmenu(bool),
     ExtTabline(bool),
     ExtTermcolors(bool),
@@ -34,6 +35,7 @@ impl UiOption {
             UiOption::ExtHlstate(val) => ("ext_hlstate", val.into()),
             UiOption::ExtLinegrid(val) => ("ext_linegrid", val.into()),
             UiOption::ExtMessages(val) => ("ext_messages", val.into()),
+            UiOption::ExtMultigrid(val) => ("ext_multigrid", val.into()),
             UiOption::ExtPopupmenu(val) => ("ext_popupmenu", val.into()),
             UiOption::ExtTabline(val) => ("ext_tabline", val.into()),
             UiOption::ExtTermcolors(val) => ("ext_termcolors", val.into()),
@@ -83,6 +85,11 @@ impl UiAttachOptions {
 
     pub fn set_messages_external(&mut self, messages_external: bool) -> &mut Self {
         self.set_option(UiOption::ExtMessages(messages_external));
+        self
+    }
+
+    pub fn set_multigrid(&mut self, multigrid: bool) -> &mut Self {
+        self.set_option(UiOption::ExtMultigrid(multigrid));
         self
     }
 
